@@ -131,16 +131,14 @@ contrast.PAvS.treat.all <- contrast.PAvS.treat.all[,-3] #remove AF mean column
 names(contrast.PAvS.treat.all)[3] <- "PAvS" #label glm results column
 ## Load PA vs S for each timepoint
 contrast.PAvS.treat <- read.table("rudflies_2023_PAvS_treat.GLMcontrast.txt", header=TRUE)
-names(contrast.PAvS.treat) <- c("PAvS.T1","PAvS.T2","PAvS.T3","PAvS.T4")
+#names(contrast.PAvS.treat) <- c("CHROM","POS","PAvS.T1","PAvS.T2","PAvS.T3","PAvS.T4")
 ## Load timepoint contrasts using PA and S combined
 contrast.PAvS.tpt <- read.table("rudflies_2023_PAvS_tpt.GLMcontrast.txt", header=TRUE)
-names(contrast.PAvS.tpt) <- c("PAvS.T1vT2","PAvS.T1vT3","PAvS.T1vT4","PAvS.T2vT3","PAvS.T2vT4","PAvS.T3vT4") #label glm results columns
+#names(contrast.PAvS.tpt) <- c("CHROM","POS","PA.S.T1vT2","PA.S.T1.T3","PA.S.T1vT4","PA.S.T2vT3","PA.S.T2vT4","PA.S.T3vT4") #label glm results columns
 ## Load PA and S "timepoint:treatment" interaction
 contrast.PAvS.int <- read.table("rudflies_2023_PAvS_int.GLMcontrast.txt", header=TRUE)
-names(contrast.PAvS.int) <- c("int.PAvS.T1vT2","int.PAvS.T1vT3","int.PAvS.T1vT4","int.PAvS.T2vT3","int.PAvS.T2vT4","int.PAvS.T3vT4") #label glm results columns
-## Join all these glm results together, and include loci columns
-haf.freq.PAvS.filt.loci <- read.table("rudflies_2023_PAvS_haf.freq.filt.loci.txt", header=TRUE) #load loci columns
-contrast.PAvS <- cbind(haf.freq.PAvS.filt.loci, contrast.PAvS.treat, contrast.PAvS.tpt, contrast.PAvS.int)
+#names(contrast.PAvS.int) <- c("CHROM","POS","int.PAvS.T1vT2","int.PAvS.T1vT3","int.PAvS.T1vT4","int.PAvS.T2vT3","int.PAvS.T2vT4","int.PAvS.T3vT4") #label glm results columns
+contrast.PAvS <- cbind(contrast.PAvS.treat, contrast.PAvS.tpt[,-c(1,2)], contrast.PAvS.int[,-c(1,2)])
 contrast.PAvS <- merge(contrast.PAvS.treat.all, contrast.PAvS, by=c("CHROM","POS"))
 contrast.PAvS <- contrast.PAvS[order(contrast.PAvS[,1], contrast.PAvS[,2]), ] #sort by locus
 ## Save all PA and S contrasts for posterity
@@ -149,10 +147,10 @@ contrast.PAvS <- contrast.PAvS[order(contrast.PAvS[,1], contrast.PAvS[,2]), ] #s
 ## Look at PA-only, E-only, and S-only time-point contrast GLM results ##
 # Load S-only results
 contrast.tpt.S.table <- read.table("rudflies_2023_S_tpt.table.GLMcontrast.txt", header=TRUE)
-names(contrast.tpt.S.table) <- c("CHROM","POS","S.af.mean","S.T1vT2","S.T1vT3","S.T1vT4","S.T2vT3","S.T2vT4","S.T3vT4") #label glm results columns
+#names(contrast.tpt.S.table) <- c("CHROM","POS","S.af.mean","S.T1vT2","S.T1vT3","S.T1vT4","S.T2vT3","S.T2vT4","S.T3vT4") #label glm results columns
 # Load PA-only results
 contrast.tpt.PA.table <- read.table("rudflies_2023_PA_tpt.table.GLMcontrast.txt", header=TRUE)
-names(contrast.tpt.PA.table) <- c("CHROM","POS","PA.af.mean","PA.T1vT2","PA.T1vT3","PA.T1vT4","PA.T2vT3","PA.T2vT4","PA.T3vT4") #label glm results columns
+#names(contrast.tpt.PA.table) <- c("CHROM","POS","PA.af.mean","PA.T1vT2","PA.T1vT3","PA.T1vT4","PA.T2vT3","PA.T2vT4","PA.T3vT4") #label glm results columns
 # Merge the two
 # Load E-only results
 contrast.tpt.E.table <- read.table("rudflies_2023_E_tpt.table.GLMcontrast.txt", header=TRUE)
@@ -167,7 +165,7 @@ contrast.tpt.S_only.PA_only.E_only <- contrast.tpt.S_only.PA_only.E_only[,-c(3,1
 
 ## TPT1-only GLM contrasts: PA vs S vs SE vs E - all pairwise ##
 contrast.PAvSvSEvE.table <- read.table("rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
-names(contrast.PAvSvSEvE.table) <- c("CHROM","POS","EvPA.T1","EvSE.T1","EvSP.T1","PAvSE.T1","PAvSP.T1","SEvSP.T1") #label glm results columns
+#names(contrast.PAvSvSEvE.table) <- c("CHROM","POS","EvPA.T1","EvSE.T1","EvSP.T1","PAvSE.T1","PAvSP.T1","SEvSP.T1") #label glm results columns
 # Save relabeled table for posterity
 # write.table(contrast.PAvSvSEvE.table, file="rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", sep="\t", quote = FALSE, row.names = F)
 
