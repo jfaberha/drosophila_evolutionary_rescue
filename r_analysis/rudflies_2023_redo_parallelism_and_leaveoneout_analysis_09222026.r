@@ -7,7 +7,7 @@
 ### consistent AF changes across all samples in a group or extreme changes in multiple,###
 ### but not all, samples. This analysis seeks to quantify parallelism, as that is the  ###
 ### key metric to discern selection from drift.                                        ###
-###																					   ###
+###                                                                                    ###
 ### There are several supplemental analyses included here as well. Notably we sought to###
 ### quantify whether putatively selected-on loci in key time-point/treatment group     ###
 ### combinations showed parallel selection in other key groups. We saw very little     ###
@@ -15,12 +15,12 @@
 ### perhaps we can identify reciprocal trends of parallelism in loci that show lower,  ###
 ### but consistent, levels of AF differentiation. In addition to EvSE.T1 and           ###
 ### EvSP.T1 SNP lists, we compared EvSP.T4 outlier SNPs as well, since that is the     ###
-### experimental endpoint for adapted SP flies.										   ###
+### experimental endpoint for adapted SP flies.                                        ###
 ##########################################################################################
 
 ### In R ###
 #configure r environment
-setwd("/scratch/user/jfaberha/20260902_101357/admera/gp_analysis/rudflies_2023_redo/r")
+setwd("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/parallel_analysis")
 library(emmeans)
 library(matrixStats)
 library(ACER)
@@ -54,11 +54,11 @@ sample_cols <- c("#D26183","#495184","#848556","#D9B851")
 #################################
 
 ## Variant Effect Predictor (VEP) annotation file with appended FLYCADD scores
-vep <- read.table("filtered-all.annot.vcf.FLYCADD.tsv", header=TRUE) 
+vep <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/filtered-all.annot.vcf.FLYCADD.tsv", header=TRUE) 
 ## Sample metadata table
-haf.meta <- read.table("rudflies_2023_meta.tsv", header=TRUE)
+haf.meta <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_meta.tsv", header=TRUE)
 ## Hafpipe imputed allele frequency table
-haf.freq <- read.delim("rudflies_2023_hafpipe.csv", header=TRUE, sep = ",")
+haf.freq <- read.delim("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_hafpipe.csv", header=TRUE, sep = ",")
 
 ## Do a bit of reformatting for the frequency table header
 names(haf.freq) <- gsub("[.]af","",names(haf.freq))
@@ -182,17 +182,17 @@ options(scipen=0)
 
 ### Start with PA and S contrasts ###
 ## Load PA vs S, all samples combined
-contrast.PAvS.treat.all <- read.table("rudflies_2023_PAvS_treat.all.table.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.treat.all <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_treat.all.table.GLMcontrast.txt", header=TRUE)
 contrast.PAvS.treat.all <- contrast.PAvS.treat.all[,-3] #remove AF mean column
 names(contrast.PAvS.treat.all)[3] <- "PAvS" #label glm results column
 ## Load PA vs S for each timepoint
-contrast.PAvS.treat <- read.table("rudflies_2023_PAvS_treat.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.treat <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_treat.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.treat) <- c("CHROM","POS","PAvS.T1","PAvS.T2","PAvS.T3","PAvS.T4")
 ## Load timepoint contrasts using PA and S combined
-contrast.PAvS.tpt <- read.table("rudflies_2023_PAvS_tpt.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.tpt <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_tpt.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.tpt) <- c("CHROM","POS","PA.S.T1vT2","PA.S.T1.T3","PA.S.T1vT4","PA.S.T2vT3","PA.S.T2vT4","PA.S.T3vT4") #label glm results columns
 ## Load PA and S "timepoint:treatment" interaction
-contrast.PAvS.int <- read.table("rudflies_2023_PAvS_int.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.int <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_int.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.int) <- c("CHROM","POS","int.PAvS.T1vT2","int.PAvS.T1vT3","int.PAvS.T1vT4","int.PAvS.T2vT3","int.PAvS.T2vT4","int.PAvS.T3vT4") #label glm results columns
 contrast.PAvS <- cbind(contrast.PAvS.treat, contrast.PAvS.tpt[,-c(1,2)], contrast.PAvS.int[,-c(1,2)])
 contrast.PAvS <- merge(contrast.PAvS.treat.all, contrast.PAvS, by=c("CHROM","POS"))
@@ -202,14 +202,13 @@ contrast.PAvS <- contrast.PAvS[order(contrast.PAvS[,1], contrast.PAvS[,2]), ] #s
 
 ## Look at PA-only, E-only, and S-only time-point contrast GLM results ##
 # Load S-only results
-contrast.tpt.S.table <- read.table("rudflies_2023_S_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.S.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_S_tpt.table.GLMcontrast.txt", header=TRUE)
 #names(contrast.tpt.S.table) <- c("CHROM","POS","S.af.mean","S.T1vT2","S.T1vT3","S.T1vT4","S.T2vT3","S.T2vT4","S.T3vT4") #label glm results columns
 # Load PA-only results
-contrast.tpt.PA.table <- read.table("rudflies_2023_PA_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.PA.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PA_tpt.table.GLMcontrast.txt", header=TRUE)
 #names(contrast.tpt.PA.table) <- c("CHROM","POS","PA.af.mean","PA.T1vT2","PA.T1vT3","PA.T1vT4","PA.T2vT3","PA.T2vT4","PA.T3vT4") #label glm results columns
-# Merge the two
 # Load E-only results
-contrast.tpt.E.table <- read.table("rudflies_2023_E_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_E_tpt.table.GLMcontrast.txt", header=TRUE)
 names(contrast.tpt.E.table) <- c("CHROM","POS","E.af.mean","E.T1vT2","E.T1vT3","E.T1vT4","E.T2vT3","E.T2vT4","E.T3vT4") #label glm results columns
 # Merge them
 contrast.tpt.S_only.PA_only.E_only <- merge(merge(contrast.tpt.S.table, contrast.tpt.PA.table, by=c("CHROM","POS")),contrast.tpt.E.table, by=c("CHROM","POS"))
@@ -220,18 +219,18 @@ contrast.tpt.S_only.PA_only.E_only <- contrast.tpt.S_only.PA_only.E_only[,-c(3,1
 #write.table(contrast.tpt.E.table, file="rudflies_2023_E_tpt.table.GLMcontrast.txt", sep="\t", quote = FALSE, row.names = F)
 
 ## TPT1-only GLM contrasts: PA vs S vs SE vs E - all pairwise ##
-contrast.PAvSvSEvE.table <- read.table("rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
+contrast.PAvSvSEvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvSvSEvE.table) <- c("CHROM","POS","EvPA.T1","EvSE.T1","EvSP.T1","PAvSE.T1","PAvSP.T1","SEvSP.T1") #label glm results columns
 # Save relabeled table for posterity
 # write.table(contrast.PAvSvSEvE.table, file="rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", sep="\t", quote = FALSE, row.names = F)
 
 ## Load PA and E contrasts ##
 # PA vs E, all time-points combined
-contrastout.PAvE.table <- read.table("rudflies_2023_PAvE_treat.all.table.GLMcontrast.txt", header=TRUE)
+contrastout.PAvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.all.table.GLMcontrast.txt", header=TRUE)
 # PA vs E, founders
-contrastout.PAvE.founder.table <- read.table("rudflies_2023_PAvE_treat.table.GLMcontrast.founders.txt", header=TRUE)
+contrastout.PAvE.founder.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.table.GLMcontrast.founders.txt", header=TRUE)
 # PA vs E, at individual time-points
-contrastout.treat.PA.E.table <- read.table("rudflies_2023_PAvE_treat.table.GLMcontrast2.txt", header=TRUE)
+contrastout.treat.PA.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.table.GLMcontrast2.txt", header=TRUE)
 # Combine these three tables
 contrastout.PAvE.table <- merge(contrastout.PAvE.table[,-3], contrastout.PAvE.founder.table[,-3], by=c("CHROM","POS"))
 contrastout.PAvE.table <- merge(contrastout.PAvE.table, contrastout.treat.PA.E.table[,-3], by=c("CHROM","POS"))
@@ -241,13 +240,13 @@ names(contrastout.PAvE.table) <- c("CHROM","POS","PAvE","PAvE.F","PAvE.T1","PAvE
 
 ## Load SE and E contrasts ##
 # S vs E, all time-points combined
-contrastout.SvE.table <- read.table("rudflies_2023_SvE_treat.all.table.GLMcontrast.txt", header=TRUE)[,c(1,2,4)]
+contrastout.SvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_treat.all.table.GLMcontrast.txt", header=TRUE)[,c(1,2,4)]
 # S vs E, at individual time-points
-contrastout.treat.S.E.table <- read.table("rudflies_2023_SvE_treat.GLMcontrast.table.txt", header=TRUE)
+contrastout.treat.S.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_treat.GLMcontrast.table.txt", header=TRUE)
 # Combine these two tables
 contrastout.SvE.table <- merge(contrastout.SvE.table, contrastout.treat.S.E.table, by=c("CHROM","POS"))
 # S and E: "treatment:time-point" interaction
-contrastout.int.S.E.table <- read.table("rudflies_2023_SvE_int.GLMcontrast.table.txt", header=TRUE)
+contrastout.int.S.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_int.GLMcontrast.table.txt", header=TRUE)
 # Add these results
 contrastout.SvE.table <- merge(contrastout.SvE.table, contrastout.int.S.E.table, by=c("CHROM","POS"))
 names(contrastout.SvE.table) <- c("CHROM","POS","SvE","SvE.T1","SvE.T2","SvE.T3","SvE.T4","int.SvE.T1vT2","int.SvE.T1vT3","int.SvE.T1vT4","int.SvE.T2vT3","int.SvE.T2vT4","int.SvE.T3vT4") #label glm results columns
@@ -272,6 +271,7 @@ dim(glm.all)
 ## P-value correction
 x=ncol(glm.all) #use number of columns
 for(i in c(3:x)) { #start after loci columns and append FDR cols at the end of the table
+  glm.all[,i] <- as.numeric(glm.all[,i])
   glm.all <- cbind(glm.all, p.adjust(glm.all[,i], method = "fdr"))
   colnames(glm.all)[i+(x-2)] <- paste(names(glm.all)[i], ".fdr", sep="")
 }
@@ -292,6 +292,7 @@ for(i in 3:x) { #start after loci columns and append logp cols at the end of the
   colnames(glm.all)[i+(y-2)] <- paste(names(glm.all)[i], ".logp", sep="")
 }
 
+
 ## Only write table if needed, these files are huge!
 #write.table(glm.all, file=paste("rudflies_2023_redo.glm.masterfile.txt", sep=""), quote = FALSE, row.names = F)
 
@@ -299,7 +300,7 @@ for(i in 3:x) { #start after loci columns and append logp cols at the end of the
 glm.all.annot <- merge(glm.all, vep, by=c("CHROM","POS"))
 
 ## Load spinosad-resistance candidate gene list
-spino.cand <- read.table("spino.cand.list.txt", header=FALSE)
+spino.cand <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/spino.cand.list.txt", header=FALSE)
 names(spino.cand) <- "Gene"
 
 ## Now merge to find All SNPs in and around candidate genes
@@ -911,47 +912,47 @@ dev.off()
 ## "glm.rudflies2023.PAvSvSEvE.leave1out.r"
 
 # Dropped cage 3 (SP)
-glm_no3 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no3.txt", header=FALSE)
+glm_no3 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no3.txt", header=TRUE)
 names(glm_no3) <- c("CHROM","POS","EvPA.T1_no3","EvSE.T1_no3","EvSP.T1_no3","PAvSE.T1_no3","PAvSP.T1_no3","SEvSP.T1_no3")
 
 # Dropped cage 7 (SP)
-glm_no7 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no7.txt", header=FALSE)
+glm_no7 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no7.txt", header=TRUE)
 names(glm_no7) <- c("CHROM","POS","EvPA.T1_no7","EvSE.T1_no7","EvSP.T1_no7","PAvSE.T1_no7","PAvSP.T1_no7","SEvSP.T1_no7")
 
 # Dropped cage 11 (SE)
-glm_no11 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no11.txt", header=FALSE)
+glm_no11 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no11.txt", header=TRUE)
 names(glm_no11) <- c("CHROM","POS","EvPA.T1_no11","EvSE.T1_no11","EvSP.T1_no11","PAvSE.T1_no11","PAvSP.T1_no11","SEvSP.T1_no11")
 
 # Dropped cage 15 (SP)
-glm_no15 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no15.txt", header=FALSE)
+glm_no15 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no15.txt", header=TRUE)
 names(glm_no15) <- c("CHROM","POS","EvPA.T1_no15","EvSE.T1_no15","EvSP.T1_no15","PAvSE.T1_no15","PAvSP.T1_no15","SEvSP.T1_no15")
 
 # Dropped cage 21 (SE)
-glm_no21 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no21.txt", header=FALSE)
+glm_no21 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no21.txt", header=TRUE)
 names(glm_no21) <- c("CHROM","POS","EvPA.T1_no21","EvSE.T1_no21","EvSP.T1_no21","PAvSE.T1_no21","PAvSP.T1_no21","SEvSP.T1_no21")
 
 # Dropped cage 27 (SE)
-glm_no27 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no27.txt", header=FALSE)
+glm_no27 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no27.txt", header=TRUE)
 names(glm_no27) <- c("CHROM","POS","EvPA.T1_no27","EvSE.T1_no27","EvSP.T1_no27","PAvSE.T1_no27","PAvSP.T1_no27","SEvSP.T1_no27")
 
 # Dropped cage 33 (SP)
-glm_no33 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no33.txt", header=FALSE)
+glm_no33 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no33.txt", header=TRUE)
 names(glm_no33) <- c("CHROM","POS","EvPA.T1_no33","EvSE.T1_no33","EvSP.T1_no33","PAvSE.T1_no33","PAvSP.T1_no33","SEvSP.T1_no33")
 
 # Dropped cage 37 (SP)
-glm_no37 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no37.txt", header=FALSE)
+glm_no37 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no37.txt", header=TRUE)
 names(glm_no37) <- c("CHROM","POS","EvPA.T1_no37","EvSE.T1_no37","EvSP.T1_no37","PAvSE.T1_no37","PAvSP.T1_no37","SEvSP.T1_no37")
 
 # Dropped cage 41 (SE)
-glm_no41 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no41.txt", header=FALSE)
+glm_no41 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no41.txt", header=TRUE)
 names(glm_no41) <- c("CHROM","POS","EvPA.T1_no41","EvSE.T1_no41","EvSP.T1_no41","PAvSE.T1_no41","PAvSP.T1_no41","SEvSP.T1_no41")
 
 # Dropped cage 45 (SE)
-glm_no45 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no45.txt", header=FALSE)
+glm_no45 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLociGLMcontrast.LOO.no45.txt", header=TRUE)
 names(glm_no45) <- c("CHROM","POS","EvPA.T1_no45","EvSE.T1_no45","EvSP.T1_no45","PAvSE.T1_no45","PAvSP.T1_no45","SEvSP.T1_no45")
 
 # No dropped cages for reference
-glm_PAvSvSEvE_all <- read.table("rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
+glm_PAvSvSEvE_all <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
 glm_PAvSvSEvE_all <- na.omit(glm_PAvSvSEvE_all)
 names(glm_PAvSvSEvE_all) <- c("CHROM","POS","EvPA.T1","EvSE.T1","EvSP.T1","PAvSE.T1","PAvSP.T1","SEvSP.T1")
 
@@ -973,6 +974,7 @@ glm_PAvSvSEvE_all <- glm_PAvSvSEvE_all[glm_PAvSvSEvE_all$CHROM != "4",]
 ## P-value correction
 x=ncol(glm_PAvSvSEvE_all) #use number of columns
 for(i in c(3:x)) { #start after loci columns and append FDR cols at the end of the table
+  glm_PAvSvSEvE_all[,i] <- as.numeric(glm_PAvSvSEvE_all[,i])
   glm_PAvSvSEvE_all <- cbind(glm_PAvSvSEvE_all, p.adjust(glm_PAvSvSEvE_all[,i], method = "fdr"))
   colnames(glm_PAvSvSEvE_all)[i+(x-2)] <- paste(names(glm_PAvSvSEvE_all)[i], ".fdr", sep="")
 }
@@ -1826,13 +1828,15 @@ contrast.PAvSvSEvE.table2 <- contrast.PAvSvSEvE.table2[,-9]
 contrast.PAvSvSEvE.table.fdr <- contrast.PAvSvSEvE.table2
 ## P-value correction
 for(i in c(3:8)) { #start after loci columns and append FDR cols at the end of the table
-  contrast.PAvSvSEvE.table.fdr[i] <- p.adjust(contrast.PAvSvSEvE.table.fdr[,i], method = "fdr")
+  contrast.PAvSvSEvE.table.fdr[,i] <- as.numeric(contrast.PAvSvSEvE.table.fdr[,i])
+  contrast.PAvSvSEvE.table.fdr[,i] <- p.adjust(contrast.PAvSvSEvE.table.fdr[,i], method = "fdr")
 }
 
 ## Initialize another table to store -log10(p) values with loci columns
 contrast.PAvSvSEvE.table.logp <- contrast.PAvSvSEvE.table2[,c(1:2)]
 ## Calculate -log10 for p-values
 for(i in 3:8) { #start after loci columns and append logp cols at the end of the table
+  contrast.PAvSvSEvE.table2[,i] <- as.numeric(contrast.PAvSvSEvE.table2[,i])
   #find minimum non-zero p-value and divide by 2 to reassign to zero values
   min.temp <- min(contrast.PAvSvSEvE.table2[contrast.PAvSvSEvE.table2[,i]!=0,i])/2 
   col.temp <- contrast.PAvSvSEvE.table2[,i]
@@ -2323,10 +2327,10 @@ names(glm_PAvSvSEvE_EvSE.T1_overlap)[3] = "clust"
 glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1 <- merge(contrast.PAvSvSEvE.table.logp, glm_PAvSvSEvE_EvSE.T1_overlap, by=c("CHROM","POS"))
 
 ## Save table for future use
-write.table(glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1, file=paste0("glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1",".txt"), sep = "\t", quote = FALSE, row.names = F)
+write.table(glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1, file="glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1.txt", sep = "\t", quote = FALSE, row.names = F)
 
 ## Reload table if desired
-#glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1 <- read.table("glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1.txt", header=TRUE)
+#glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1.txt", header=TRUE)
 
 # This manhattan plot shows the contrast between E and SE samples in TPT 1
 manh.EvSE.T1.clust <- ggplot(contrast.PAvSvSEvE.table.logp, aes(POS, EvSE.T1.logp)) +
@@ -2385,10 +2389,10 @@ names(glm_PAvSvSEvE_EvSP.T1_overlap)[3] = "clust"
 glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1 <- merge(contrast.PAvSvSEvE.table.logp, glm_PAvSvSEvE_EvSP.T1_overlap, by=c("CHROM","POS"))
 
 ## Save table for future use
-write.table(glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1, file=paste0("glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1",".txt"), sep = "\t", quote = FALSE, row.names = F)
+write.table(glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1, file="glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1.txt", sep = "\t", quote = FALSE, row.names = F)
 
 ## Reload table if desired
-#glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1 <- read.table("glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1.txt", header=TRUE)
+#glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1.txt", header=TRUE)
 
 # This manhattan plot shows the contrast between E and SP samples in TPT 1
 manh.EvSP.T1.clust <- ggplot(contrast.PAvSvSEvE.table.logp, aes(POS, EvSP.T1.logp)) +
@@ -2447,10 +2451,10 @@ names(glm_PAvSvSEvE_EvPA.T1_overlap)[3] = "clust"
 glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1 <- merge(contrast.PAvSvSEvE.table.logp, glm_PAvSvSEvE_EvPA.T1_overlap, by=c("CHROM","POS"))
 
 ## Save table for future use
-write.table(glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1, file=paste0("glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1",".txt"), sep = "\t", quote = FALSE, row.names = F)
+write.table(glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1, file="glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1.txt", sep = "\t", quote = FALSE, row.names = F)
 
 ## Reload table if desired
-#glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1 <- read.table("glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1.txt", header=TRUE)
+#glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/glm_PAvSvSEvE_score_ttest_clusters_EvPA.T1.txt", header=TRUE)
 
 # This manhattan plot shows the contrast between E and PA samples in TPT 1
 manh.PAvE.T1.clust <- ggplot(contrast.PAvSvSEvE.table.logp, aes(POS, EvPA.T1.logp)) +
@@ -2490,23 +2494,23 @@ dev.off()
 ## "glm.rudflies2023.PAvSvE.TPT4.leave1out.sh"
 
 # Dropped cage 3 (SP)
-glm_T4_no3 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.TPT4.LOO.no3.txt", header=FALSE)
+glm_T4_no3 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvE.wLociGLMcontrast.TPT4.LOO.no3.txt", header=TRUE)
 names(glm_T4_no3) <- c("CHROM","POS","EvPA.T4_no3","EvSP.T4_no3","PAvSP.T4_no3")
 
 # Dropped cage 7 (SP)
-glm_T4_no7 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.TPT4.LOO.no7.txt", header=FALSE)
+glm_T4_no7 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvE.wLociGLMcontrast.TPT4.LOO.no7.txt", header=TRUE)
 names(glm_T4_no7) <- c("CHROM","POS","EvPA.T4_no7","EvSP.T4_no7","PAvSP.T4_no7")
 
 # Dropped cage 15 (SP)
-glm_T4_no15 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.TPT4.LOO.no15.txt", header=FALSE)
+glm_T4_no15 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvE.wLociGLMcontrast.TPT4.LOO.no15.txt", header=TRUE)
 names(glm_T4_no15) <- c("CHROM","POS","EvPA.T4_no15","EvSP.T4_no15","PAvSP.T4_no15")
 
 # Dropped cage 33 (SP)
-glm_T4_no33 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.TPT4.LOO.no33.txt", header=FALSE)
+glm_T4_no33 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvE.wLociGLMcontrast.TPT4.LOO.no33.txt", header=TRUE)
 names(glm_T4_no33) <- c("CHROM","POS","EvPA.T4_no33","EvSP.T4_no33","PAvSP.T4_no33")
 
 # Dropped cage 37 (SP)
-glm_T4_no37 <- read.table("rudflies_2023_PAvSvSEvE.wLociGLMcontrast.TPT4.LOO.no37.txt", header=FALSE)
+glm_T4_no37 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvE.wLociGLMcontrast.TPT4.LOO.no37.txt", header=TRUE)
 names(glm_T4_no37) <- c("CHROM","POS","EvPA.T4_no37","EvSP.T4_no37","PAvSP.T4_no37")
 
 # No dropped cages for reference
@@ -3154,10 +3158,10 @@ names(glm_PAvSvE_TPT4_EvSP.T4_overlap)[3] = "clust"
 glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4 <- merge(glm_PAvSvE_TPT4.logp, glm_PAvSvE_TPT4_EvSP.T4_overlap, by=c("CHROM","POS"))
 
 ## Save table for future use
-write.table(glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4, file=paste0("glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4",".txt"), sep = "\t", quote = FALSE, row.names = F)
+write.table(glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4, file="glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4.txt", sep = "\t", quote = FALSE, row.names = F)
 
 ## Reload table if desired
-#glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4 <- read.table("glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4.txt", header=TRUE)
+#glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4.txt", header=TRUE)
 
 # This manhattan plot shows the contrast between E and SP samples in TPT 1
 manh.EvSP.T4.clust <- ggplot(glm_PAvSvE_TPT4.logp, aes(POS, EvSP.T4.logp)) +
@@ -3216,10 +3220,10 @@ names(glm_PAvSvE_TPT4_EvPA.T4_overlap)[3] = "clust"
 glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4 <- merge(glm_PAvSvE_TPT4.logp, glm_PAvSvE_TPT4_EvPA.T4_overlap, by=c("CHROM","POS"))
 
 ## Save table for future use
-write.table(glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4, file=paste0("glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4",".txt"), sep = "\t", quote = FALSE, row.names = F)
+write.table(glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4, file="glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4.txt", sep = "\t", quote = FALSE, row.names = F)
 
 ## Reload table if desired
-#glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4 <- read.table("glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4.txt", header=TRUE)
+#glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/glm_PAvSvE_TPT4_score_ttest_clusters_EvPA.T4.txt", header=TRUE)
 
 # This manhattan plot shows the contrast between E and PA samples in TPT 1
 manh.EvPA.T4.clust <- ggplot(glm_PAvSvE_TPT4.logp, aes(POS, EvPA.T4.logp)) +
@@ -3278,10 +3282,10 @@ names(glm_PAvSvE_TPT4_PAvSP.T4_overlap)[3] = "clust"
 glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4 <- merge(glm_PAvSvE_TPT4.logp, glm_PAvSvE_TPT4_PAvSP.T4_overlap, by=c("CHROM","POS"))
 
 ## Save table for future use
-write.table(glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4, file=paste0("glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4",".txt"), sep = "\t", quote = FALSE, row.names = F)
+write.table(glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4, file="glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4.txt", sep = "\t", quote = FALSE, row.names = F)
 
 ## Reload table if desired
-#glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4 <- read.table("glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4.txt", header=TRUE)
+#glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4 <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/glm_PAvSvE_TPT4_score_ttest_clusters_PAvSP.T4.txt", header=TRUE)
 
 # This manhattan plot shows the contrast between PA and SP samples in TPT 1
 manh.PAvSP.T4.clust <- ggplot(glm_PAvSvE_TPT4.logp, aes(POS, PAvSP.T4.logp)) +
@@ -3308,9 +3312,14 @@ dev.off()
 
 
 ##############################################################################
-### Test for elevated allele frequency differences of top outliers in each ###
+### Test for elevated allele frequency differences in top outliers in each ###
 ### contrast of interest (EvSE.T1, EvSP.T1, EvSPT4) within clusters from   ###
 ### each contrast of interest. There will be nine total comparisons (3X3). ###
+###                                                                        ###
+### There will be two versions of this reciprocal parallelism analysis.    ###
+### Here, we will look for parallelism of the top outliers per cluster     ###
+### based on the lowest all-sample GLM FDR values per respective contrast. ###
+### Later, we will choose top outliers per leave-one-out GLMs results.     ###
 ##############################################################################
 
 ##############################################################
@@ -4153,7 +4162,7 @@ f=4 #pick E vs SP field for analysis
 ## Make list of all SP cages in T1
 SP_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SP",]$cage
 
-for(i in SP_loo_cages) { #cycle through all SP T1 cages
+for(i in SP_loo_cages) { #cycle through all SP T4 cages
 	### T-tests for all contrasts each leave one out GLM ###
 	assign(paste("ttest_SPT4clust_EvSPT4_topsig_no",i,sep=""),c())
 	## This run 100 iterations of focal and matched SNP selection
@@ -4247,3 +4256,1580 @@ for(i in SP_loo_cages) { #cycle through all SP T1 cages
 ttest_SPT4clust_EvSPT4_topsig <- rbind(cbind("no3","SP",ttest_SPT4clust_EvSPT4_topsig_no3),cbind("no7","SP",ttest_SPT4clust_EvSPT4_topsig_no7),cbind("no15","SP",ttest_SPT4clust_EvSPT4_topsig_no15),cbind("no33","SP",ttest_SPT4clust_EvSPT4_topsig_no33),cbind("no37","SP",ttest_SPT4clust_EvSPT4_topsig_no37))
 
 write.table(ttest_SPT4clust_EvSPT4_topsig, file="rudflies_2023_redo.ttest_SPT4clust_EvSPT4_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
+
+
+
+
+######################################################################################
+### Leave-one-out parallelism analysis. Above, we looked at parallelism within     ###
+### top sites within clusters so we'd have a uniform SNP set to compare different  ###
+### treatments. Here, we will select top sites from unique clusters constructed    ###
+### using each set of leave-one-out GLM results. This will provide more insight    ###
+### into parallelism within treatments rather than across treatments. To do so,    ###
+### we will cycle through each set of LOO GLM results, build clusters, and select  ###
+### top sites for each SE.T1, SP.T1, and SP.T4 sample prior to running parallelism ###  
+### tests.                                                                         ###
+######################################################################################
+
+### Start with EvSE.T1 and EvSP.T1 leave-one-out GLM results ###
+
+###############################################
+### Try to find clusters for data reduction ###
+###############################################
+
+### Create a table with leave-one-out p, fdr, and logp tables for EvSE.T1 & EvSP.T1
+## Create lists of EvSE.T1 LOO header patterns
+SE_loo_cages2 <- unlist(lapply(SE_loo_cages, function(x) paste0("EvSE.T1_no", x)))
+SE_loo_cages2 <- paste(SE_loo_cages2, collapse = "|")
+
+## Create lists of EvSP.T1 LOO header patterns
+SP_loo_cages2 <- unlist(lapply(SP_loo_cages, function(x) paste0("EvSP.T1_no", x)))
+SP_loo_cages2 <- paste(SP_loo_cages2, collapse = "|")
+
+## Select columns that match any LOO cage/contrast in the list
+glm_PAvSvSEvE_LOO <- glm_PAvSvSEvE_all %>% select(matches(SE_loo_cages2) | matches(SP_loo_cages2))
+
+## Remove extra unnecessary matches
+glm_PAvSvSEvE_LOO <- select(glm_PAvSvSEvE_LOO,-contains("SEvSP"))
+
+## Add locus columns
+glm_PAvSvSEvE_LOO <- cbind(glm_PAvSvSEvE_all[,c(1:2)],glm_PAvSvSEvE_LOO)
+
+## Store duplicate table with corrected p-values for later
+glm_PAvSvSEvE_LOO_fdr <- select(glm_PAvSvSEvE_LOO,contains("CHROM") | contains("POS") | contains("fdr"))
+
+## Store duplicate table with -log10(P) values for later
+glm_PAvSvSEvE_LOO_logp <- select(glm_PAvSvSEvE_LOO,contains("CHROM") | contains("POS") | contains("logp"))
+
+## Remove unnecessary columns for clustering
+glm_PAvSvSEvE_LOO <- select(glm_PAvSvSEvE_LOO,-contains("fdr"))
+glm_PAvSvSEvE_LOO <- select(glm_PAvSvSEvE_LOO,-contains("logp"))
+
+
+### Create a table with leave-one-out frequency difference tables for EvSE.T1 & EvSP.T1
+## Create lists of SE LOO frequency difference tables
+SE_loo_cages3 <- unlist(lapply(SE_loo_cages, function(x) paste0("freq_diff_no", x)))
+
+## Create lists of SP LOO frequency difference tables
+SP_loo_cages3 <- unlist(lapply(SP_loo_cages, function(x) paste0("freq_diff_no", x)))
+
+## Grab locus columns to intialize master LOO frequency table
+freq_diff_allLOO <- freq_diff_no3_bed[,c(1:2)]
+## Cycle through all SE LOO tables and grab column 1 (EvSE.T1)
+for(f in SE_loo_cages3) {
+	freq_diff_allLOO <- cbind(freq_diff_allLOO,get(f)[,1] )
+}
+## Name columns
+names(freq_diff_allLOO)[c(3:7)] <- SE_loo_cages3
+names(freq_diff_allLOO) <- gsub("freq_diff","EvSE.T1",names(freq_diff_allLOO))
+
+## Cycle through all SP LOO tables and grab column 2 (EvSP.T1)
+for(f in SP_loo_cages3) {
+	freq_diff_allLOO <- cbind(freq_diff_allLOO,get(f)[,2] )
+}
+## Name columns
+names(freq_diff_allLOO)[c(8:12)] <- SP_loo_cages3
+names(freq_diff_allLOO) <- gsub("freq_diff","EvSP.T1",names(freq_diff_allLOO))
+
+
+## Join FDR and delta frequency cols that will be used to calculate scores for clustering
+glm_PAvSvSEvE_LOO_score <- merge(glm_PAvSvSEvE_LOO_fdr, freq_diff_allLOO, by=c("CHROM","POS"))
+## Sort by locus
+glm_PAvSvSEvE_LOO_score <- glm_PAvSvSEvE_LOO_score[order(glm_PAvSvSEvE_LOO_score[,1], glm_PAvSvSEvE_LOO_score[,2]), ]
+
+## Assign scores based on a combination of significance level and mean frequency diffs
+## These criteria were borrowed and modified from Rudman et. al, 2022:
+## "Direct observation of adaptive tracking on ecological time scales in Drosophila"
+for(f in c(3:12)) {
+	glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score[,f] > 0.2,f+20] <- 0
+	glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score[,f] < 0.2 | (glm_PAvSvSEvE_LOO_score[,f] > 0.2 & glm_PAvSvSEvE_LOO_score[,f+10] > 0.02),f+20] <- 1
+	glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score[,f] < 0.05 & glm_PAvSvSEvE_LOO_score[,f+10] > 0.02,f+20] <- 2
+	glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score[,f] < 0.01 & glm_PAvSvSEvE_LOO_score[,f+10] > 0.02,f+20] <- 3
+	glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score[,f] < 0.001 & glm_PAvSvSEvE_LOO_score[,f+10] > 0.02,f+20] <- 4
+	glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score[,f] < 0.0001 & glm_PAvSvSEvE_LOO_score[,f+10] > 0.02,f+20] <- 5
+	glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score[,f] < 0.00001 & glm_PAvSvSEvE_LOO_score[,f+10] > 0.02,f+20] <- 6
+	names(glm_PAvSvSEvE_LOO_score)[f+20] <- paste(names(glm_PAvSvSEvE_LOO_score[f]),".score",sep="")
+}
+
+## Main idea is testing whether window-based scores are significantly higher than randomly 
+## assigned scores. Here, let's shuffle scores per chromosome to control for observed 
+## variable signals of selective sweeps across chromosomes.
+set.seed(42) 
+glm_PAvSvSEvE_LOO_score_rand <- c() #initialize data frame
+
+## Loop through all chromosomes
+for(i in unique(glm_PAvSvSEvE_LOO_score$CHROM)) {
+	shuffle_idx <- c()
+	tempCHROM <- glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score$CHROM==i,]
+	shuffle_idx <- append(shuffle_idx, sample(1:nrow(tempCHROM)))
+	tempCHROM[, c("CHROM", "POS")] <- tempCHROM[shuffle_idx, c("CHROM", "POS")]
+	glm_PAvSvSEvE_LOO_score_rand <- rbind(glm_PAvSvSEvE_LOO_score_rand,tempCHROM)
+}
+
+## Sort based on randomized loci
+glm_PAvSvSEvE_LOO_score_rand <- glm_PAvSvSEvE_LOO_score_rand[order(glm_PAvSvSEvE_LOO_score_rand[,1], glm_PAvSvSEvE_LOO_score_rand[,2]), ]
+
+
+### True loci window scores ###
+## Create indexes for each chromosome to slide over and calculate mean scores over 501-SNP 
+## windows. If we don't do this per chromosome, the average will be calculated across 
+## consecutive chromosomes.
+
+## 2L
+glm_2L_LOO_true <- unique(glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score$CHROM=="2L",]) 
+glm_2L_LOO_true <- glm_2L_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_2L_LOO_true <- glm_2L_LOO_true[is.finite(rowSums(glm_2L_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_2L_LOO_true$POS <- as.integer(glm_2L_LOO_true$POS)
+glm_2L_LOO_true.rolwin501 <- glm_2L_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_2L_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_2L_LOO_true[is.finite(glm_2L_LOO_true[,i])=="TRUE",i])+100
+	glm_2L_LOO_true[is.infinite(glm_2L_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_2L_LOO_true.rolwin501 <- cbind(glm_2L_LOO_true.rolwin501,slide_mean(glm_2L_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_2L_LOO_true.rolwin501)[i] <- paste(names(glm_2L_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## 2R
+glm_2R_LOO_true <- unique(glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score$CHROM=="2R",])
+glm_2R_LOO_true <- glm_2R_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_2R_LOO_true <- glm_2R_LOO_true[is.finite(rowSums(glm_2R_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_2R_LOO_true$POS <- as.integer(glm_2R_LOO_true$POS)
+glm_2R_LOO_true.rolwin501 <- glm_2R_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_2R_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_2R_LOO_true[is.finite(glm_2R_LOO_true[,i])=="TRUE",i])+100
+	glm_2R_LOO_true[is.infinite(glm_2R_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_2R_LOO_true.rolwin501 <- cbind(glm_2R_LOO_true.rolwin501,slide_mean(glm_2R_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_2R_LOO_true.rolwin501)[i] <- paste(names(glm_2R_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## 3L
+glm_3L_LOO_true <- unique(glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score$CHROM=="3L",])
+glm_3L_LOO_true <- glm_3L_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_3L_LOO_true <- glm_3L_LOO_true[is.finite(rowSums(glm_3L_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_3L_LOO_true$POS <- as.integer(glm_3L_LOO_true$POS)
+glm_3L_LOO_true.rolwin501 <- glm_3L_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_3L_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_3L_LOO_true[is.finite(glm_3L_LOO_true[,i])=="TRUE",i])+100
+	glm_3L_LOO_true[is.infinite(glm_3L_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_3L_LOO_true.rolwin501 <- cbind(glm_3L_LOO_true.rolwin501,slide_mean(glm_3L_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_3L_LOO_true.rolwin501)[i] <- paste(names(glm_3L_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## 3R
+glm_3R_LOO_true <- unique(glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score$CHROM=="3R",])
+glm_3R_LOO_true <- glm_3R_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_3R_LOO_true <- glm_3R_LOO_true[is.finite(rowSums(glm_3R_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_3R_LOO_true$POS <- as.integer(glm_3R_LOO_true$POS)
+glm_3R_LOO_true.rolwin501 <- glm_3R_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_3R_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_3R_LOO_true[is.finite(glm_3R_LOO_true[,i])=="TRUE",i])+100
+	glm_3R_LOO_true[is.infinite(glm_3R_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_3R_LOO_true.rolwin501 <- cbind(glm_3R_LOO_true.rolwin501,slide_mean(glm_3R_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_3R_LOO_true.rolwin501)[i] <- paste(names(glm_3R_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## X
+glm_X_LOO_true <- unique(glm_PAvSvSEvE_LOO_score[glm_PAvSvSEvE_LOO_score$CHROM=="X",])
+glm_X_LOO_true <- glm_X_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_X_LOO_true <- glm_X_LOO_true[is.finite(rowSums(glm_X_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_X_LOO_true$POS <- as.integer(glm_X_LOO_true$POS) #reformat
+glm_X_LOO_true.rolwin501 <- glm_X_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_X_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_X_LOO_true[is.finite(glm_X_LOO_true[,i])=="TRUE",i])+100
+	glm_X_LOO_true[is.infinite(glm_X_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_X_LOO_true.rolwin501 <- cbind(glm_X_LOO_true.rolwin501,slide_mean(glm_X_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_X_LOO_true.rolwin501)[i] <- paste(names(glm_X_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## Now, join the the new rolling window tables for all chromosomes
+glm_PAvSvSEvE_LOO_score.rolwin501 <- na.omit(rbind(glm_2L_LOO_true.rolwin501,glm_2R_LOO_true.rolwin501,glm_3L_LOO_true.rolwin501,glm_3R_LOO_true.rolwin501,glm_X_LOO_true.rolwin501))
+
+
+## How many sites remain after merging all filtered GLM results tables?
+dim(glm_PAvSvSEvE_LOO_score.rolwin501)
+#[1] 15874    32
+
+
+### Random locus window scores ###
+## Create indexes for each chromosome to slide over and calculate mean scores over 501-SNP 
+## windows. If we don't do this per chromosome, the average will be calculated across 
+## consecutive chromosomes.
+
+## 2L
+glm_2L_LOO_rand <- unique(glm_PAvSvSEvE_LOO_score_rand[glm_PAvSvSEvE_LOO_score_rand$CHROM=="2L",]) 
+glm_2L_LOO_rand <- glm_2L_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_2L_LOO_rand <- glm_2L_LOO_rand[is.finite(rowSums(glm_2L_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_2L_LOO_rand$POS <- as.integer(glm_2L_LOO_rand$POS)
+glm_2L_LOO_rand.rolwin501 <- glm_2L_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_2L_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_2L_LOO_rand[is.finite(glm_2L_LOO_rand[,i])=="TRUE",i])+100
+	glm_2L_LOO_rand[is.infinite(glm_2L_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_2L_LOO_rand.rolwin501 <- cbind(glm_2L_LOO_rand.rolwin501,slide_mean(glm_2L_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_2L_LOO_rand.rolwin501)[i] <- paste(names(glm_2L_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## 2R
+glm_2R_LOO_rand <- unique(glm_PAvSvSEvE_LOO_score_rand[glm_PAvSvSEvE_LOO_score_rand$CHROM=="2R",])
+glm_2R_LOO_rand <- glm_2R_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_2R_LOO_rand <- glm_2R_LOO_rand[is.finite(rowSums(glm_2R_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_2R_LOO_rand$POS <- as.integer(glm_2R_LOO_rand$POS)
+glm_2R_LOO_rand.rolwin501 <- glm_2R_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_2R_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_2R_LOO_rand[is.finite(glm_2R_LOO_rand[,i])=="TRUE",i])+100
+	glm_2R_LOO_rand[is.infinite(glm_2R_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_2R_LOO_rand.rolwin501 <- cbind(glm_2R_LOO_rand.rolwin501,slide_mean(glm_2R_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_2R_LOO_rand.rolwin501)[i] <- paste(names(glm_2R_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## 3L
+glm_3L_LOO_rand <- unique(glm_PAvSvSEvE_LOO_score_rand[glm_PAvSvSEvE_LOO_score_rand$CHROM=="3L",])
+glm_3L_LOO_rand <- glm_3L_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_3L_LOO_rand <- glm_3L_LOO_rand[is.finite(rowSums(glm_3L_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_3L_LOO_rand$POS <- as.integer(glm_3L_LOO_rand$POS)
+glm_3L_LOO_rand.rolwin501 <- glm_3L_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_3L_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_3L_LOO_rand[is.finite(glm_3L_LOO_rand[,i])=="TRUE",i])+100
+	glm_3L_LOO_rand[is.infinite(glm_3L_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_3L_LOO_rand.rolwin501 <- cbind(glm_3L_LOO_rand.rolwin501,slide_mean(glm_3L_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_3L_LOO_rand.rolwin501)[i] <- paste(names(glm_3L_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## 3R
+glm_3R_LOO_rand <- unique(glm_PAvSvSEvE_LOO_score_rand[glm_PAvSvSEvE_LOO_score_rand$CHROM=="3R",])
+glm_3R_LOO_rand <- glm_3R_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_3R_LOO_rand <- glm_3R_LOO_rand[is.finite(rowSums(glm_3R_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_3R_LOO_rand$POS <- as.integer(glm_3R_LOO_rand$POS)
+glm_3R_LOO_rand.rolwin501 <- glm_3R_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_3R_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_3R_LOO_rand[is.finite(glm_3R_LOO_rand[,i])=="TRUE",i])+100
+	glm_3R_LOO_rand[is.infinite(glm_3R_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_3R_LOO_rand.rolwin501 <- cbind(glm_3R_LOO_rand.rolwin501,slide_mean(glm_3R_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_3R_LOO_rand.rolwin501)[i] <- paste(names(glm_3R_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## X
+glm_X_LOO_rand <- unique(glm_PAvSvSEvE_LOO_score_rand[glm_PAvSvSEvE_LOO_score_rand$CHROM=="X",])
+glm_X_LOO_rand <- glm_X_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_X_LOO_rand <- glm_X_LOO_rand[is.finite(rowSums(glm_X_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_X_LOO_rand$POS <- as.integer(glm_X_LOO_rand$POS) #reformat
+glm_X_LOO_rand.rolwin501 <- glm_X_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_X_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_X_LOO_rand[is.finite(glm_X_LOO_rand[,i])=="TRUE",i])+100
+	glm_X_LOO_rand[is.infinite(glm_X_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_X_LOO_rand.rolwin501 <- cbind(glm_X_LOO_rand.rolwin501,slide_mean(glm_X_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_X_LOO_rand.rolwin501)[i] <- paste(names(glm_X_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## Now, join the the new rolling window tables for all chromosomes
+glm_PAvSvSEvE_LOO_score_rand.rolwin501 <- na.omit(rbind(glm_2L_LOO_rand.rolwin501,glm_2R_LOO_rand.rolwin501,glm_3L_LOO_rand.rolwin501,glm_3R_LOO_rand.rolwin501,glm_X_LOO_rand.rolwin501))
+
+## How many sites remain after merging all filtered GLM results tables?
+dim(glm_PAvSvSEvE_LOO_score_rand.rolwin501)
+#[1] 15874    32
+
+
+### T-tests within windows ###
+## Now we want to perform one-sided t-tests on scores within true locus windows and random 
+## locus windows. Significant windows with true locus scores higher than random locus 
+## scores will later be merged.
+
+## Check all contrasts
+for(i in 23:32) { #loop through score columns, "SE" and "SP" contrasts with "E" pops
+	## 2L
+	glm_2L_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_2L_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_2L_LOO_ttest <- rbind(glm_2L_LOO_ttest,
+    		cbind(glm_2L_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),2]),
+    			STOP=max(glm_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),i], glm_2L_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),i]),
+    			med_score=median(glm_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),i]),
+    			max_score=max(glm_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),i]),
+    			rand_score=mean(glm_2L_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),i]),
+    			rand_med_score=median(glm_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),i]),
+    			rand_max_score=max(glm_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2L_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_2L_LOO_ttest_",gsub(".score","",names(glm_2L_LOO_true)[i])), glm_2L_LOO_ttest)
+
+	## 2R
+	glm_2R_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_2R_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_2R_LOO_ttest <- rbind(glm_2R_LOO_ttest,
+    		cbind(glm_2R_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),2]),
+    			STOP=max(glm_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),i], glm_2R_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),i]),
+    			med_score=median(glm_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),i]),
+    			max_score=max(glm_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),i]),
+    			rand_score=mean(glm_2R_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),i]),
+    			rand_med_score=median(glm_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),i]),
+    			rand_max_score=max(glm_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_2R_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_2R_LOO_ttest_",gsub(".score","",names(glm_2R_LOO_true)[i])), glm_2R_LOO_ttest)
+
+	## 3L
+	glm_3L_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_3L_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_3L_LOO_ttest <- rbind(glm_3L_LOO_ttest,
+    		cbind(glm_3L_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),2]),
+    			STOP=max(glm_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),i], glm_3L_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),i]),
+    			med_score=median(glm_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),i]),
+    			max_score=max(glm_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),i]),
+    			rand_score=mean(glm_3L_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),i]),
+    			rand_med_score=median(glm_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),i]),
+    			rand_max_score=max(glm_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3L_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_3L_LOO_ttest_",gsub(".score","",names(glm_3L_LOO_true)[i])), glm_3L_LOO_ttest)
+
+	## 3R
+	glm_3R_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_3R_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_3R_LOO_ttest <- rbind(glm_3R_LOO_ttest,
+    		cbind(glm_3R_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),2]),
+    			STOP=max(glm_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),i], glm_3R_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),i]),
+    			med_score=median(glm_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),i]),
+    			max_score=max(glm_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),i]),
+    			rand_score=mean(glm_3R_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),i]),
+    			rand_med_score=median(glm_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),i]),
+    			rand_max_score=max(glm_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_3R_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_3R_LOO_ttest_",gsub(".score","",names(glm_3R_LOO_true)[i])), glm_3R_LOO_ttest)
+
+	## X
+	glm_X_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_X_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_X_LOO_ttest <- rbind(glm_X_LOO_ttest,
+    		cbind(glm_X_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),2]),
+    			STOP=max(glm_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),i], glm_X_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),i]),
+    			med_score=median(glm_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),i]),
+    			max_score=max(glm_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),i]),
+    			rand_score=mean(glm_X_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),i]),
+    			rand_med_score=median(glm_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),i]),
+    			rand_max_score=max(glm_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_X_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_X_LOO_ttest_",gsub(".score","",names(glm_X_LOO_true)[i])), glm_X_LOO_ttest)
+
+
+	## Now, join stats from the the new rolling window tables for all chromosomes
+    glm_PAvSvSEvE_LOO_score_ttest <- na.omit(rbind(glm_2L_LOO_ttest,glm_2R_LOO_ttest,glm_3L_LOO_ttest,glm_3R_LOO_ttest,glm_X_LOO_ttest))
+    ## Reformat
+    glm_PAvSvSEvE_LOO_score_ttest$statistic <- sapply(glm_PAvSvSEvE_LOO_score_ttest$statistic, toString)
+    glm_PAvSvSEvE_LOO_score_ttest$parameter <- sapply(glm_PAvSvSEvE_LOO_score_ttest$parameter, toString)
+    glm_PAvSvSEvE_LOO_score_ttest$p.value <- sapply(glm_PAvSvSEvE_LOO_score_ttest$p.value, toString)
+    glm_PAvSvSEvE_LOO_score_ttest$stderr <- sapply(glm_PAvSvSEvE_LOO_score_ttest$stderr, toString)
+    ## Correct t-test p-values
+    glm_PAvSvSEvE_LOO_score_ttest$fdr <- p.adjust(glm_PAvSvSEvE_LOO_score_ttest$p.value, method = "fdr")    
+    ## Name table for particular contrast 
+    assign(paste0("glm_PAvSvSEvE_LOO_score_ttest_",
+    	gsub(".score","",names(glm_X_LOO_true)[i])), glm_PAvSvSEvE_LOO_score_ttest)
+    ## Save table for particular contrast 
+    write.table(glm_PAvSvSEvE_LOO_score_ttest, file=paste0("glm_PAvSvSEvE_LOO_score_ttest_",
+    	gsub(".score","",names(glm_X_LOO_true)[i]),".txt"),
+    	sep = "\t", quote = FALSE, row.names = F)
+    
+    ## Filter windows for significant t-test results and minimum [max] score of 2.
+    glm_PAvSvSEvE_LOO_score_ttest_filt <- glm_PAvSvSEvE_LOO_score_ttest[glm_PAvSvSEvE_LOO_score_ttest$fdr<0.05 & glm_PAvSvSEvE_LOO_score_ttest$max_score>=2,]
+    
+    ## We tried filtering by mean and median scores as well, but the EvSP had nothing.
+    ## Using max scores within windows as filtering criteria worked for all contrasts.
+    #glm_PAvSvSEvE_LOO_score_ttest_filt <- glm_PAvSvSEvE_LOO_score_ttest[glm_PAvSvSEvE_LOO_score_ttest$fdr<0.05 & glm_PAvSvSEvE_LOO_score_ttest$mean_score>=2,]
+    
+    ## Convert loci and window ranges to Genomic Ranges table
+	gr <- GRanges(seqnames=glm_PAvSvSEvE_LOO_score_ttest_filt[,1],
+		ranges=IRanges(as.integer(glm_PAvSvSEvE_LOO_score_ttest_filt[,3]), 	as.integer(glm_PAvSvSEvE_LOO_score_ttest_filt[,4])),
+		strand="+",
+		pos=glm_PAvSvSEvE_LOO_score_ttest_filt[,2])
+
+	## Now merge all overlapping significant windows
+	merged_gr_LOO <- reduce(gr)
+    ## Name table for particular contrast 
+	assign(paste0("glm_PAvSvSEvE_LOO_score_ttest_intervals_", 
+		gsub(".fdr.score","",names(glm_X_LOO_true)[i])), merged_gr_LOO)
+	## Save table for particular contrast 
+	write.table(merged_gr_LOO, file=paste0("glm_PAvSvSEvE_LOO_score_ttest_intervals_",
+		gsub(".fdr.score","",names(glm_X_LOO_true)[i]),".txt"),
+		sep = "\t", quote = FALSE, row.names = F)
+}
+
+## How many merged clusters in each contrast?
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no11))
+#[1] 138   5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no21))
+#[1] 100   5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no27))
+#[1] 133   5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no41))
+#[1] 108   5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no45))
+#[1] 120   5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no3))
+#[1] 20  5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no7))
+#[1] 35  5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no15))
+#[1] 27  5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no33))
+#[1] 60  5
+dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no37))
+#[1] 55  5
+
+
+### Plot EvSE.T1 clusters per contrast ###
+
+## Check all contrasts
+for(i in 1:5) { #loop through SE cages
+	## Grab data frame for left out cage
+	tempdf <- get(paste("glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no",SE_loo_cages[i],sep="")) 
+
+	### E vs SE contrast
+	## Set each cluster as an alternating color
+	tempdf$color <- rep(c("blue4", "orange3"),length.out = nrow(as.data.frame(tempdf)))
+
+	## Convert to normal data frame
+	temp.df <- as.data.frame(tempdf)
+
+	## Use locus info to name each cluster
+	temp.df$clust <- paste(temp.df$seqnames,temp.df$start,temp.df$end,sep="_")
+
+	## Create a bed file using original SNP loci with "dummy" stop site
+	glm_PAvSvSEvE_LOO_bed <- as.data.frame(cbind(CHROM=as.character(glm_PAvSvSEvE_LOO$CHROM), POS=as.integer(glm_PAvSvSEvE_LOO$POS), STOP=as.integer(glm_PAvSvSEvE_LOO$POS + 1)))
+
+	## Sort bed file
+	glm_PAvSvSEvE_LOO_bed <- glm_PAvSvSEvE_LOO_bed[order(glm_PAvSvSEvE_LOO_bed[,1], as.numeric(glm_PAvSvSEvE_LOO_bed[,2])),]
+
+	## Create genomic ranges object with new bed file
+	glm_PAvSvSEvE_LOO_bed <- GRanges(seqnames=glm_PAvSvSEvE_LOO_bed[,1],
+		ranges=IRanges(as.integer(glm_PAvSvSEvE_LOO_bed[,2]), 	as.integer(glm_PAvSvSEvE_LOO_bed[,2])+1),
+		strand="+",
+		pos=glm_PAvSvSEvE_LOO_bed[,2])
+
+	## Merge original loci with intervals so we can assign cluster colors for plotting
+	tempdf_overlap <- as.data.frame(mergeByOverlaps(glm_PAvSvSEvE_LOO_bed, tempdf))
+
+	## Reformat merged table to retain only relevant columns
+	tempdf_overlap <- as.data.frame(cbind(CHROM=as.character(tempdf_overlap[,1]), 
+		POS=as.integer(tempdf_overlap[,2]),
+		paste(tempdf_overlap[,8],
+		tempdf_overlap[,9],
+		tempdf_overlap[,10],sep="_"),
+		color=tempdf_overlap[,13]))
+
+	## Rename cluster column header
+	names(tempdf_overlap)[3] = "clust"
+
+	## Finally, merge -log10(p) values for making manhattans
+	tempdf_clusters <- merge(glm_PAvSvSEvE_LOO_logp[,c(1,2,i+2)], tempdf_overlap, by=c("CHROM","POS"))
+
+	## Save table for future use
+	assign(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSE.T1_no", SE_loo_cages[i], sep=""), tempdf_clusters)
+	## Write table
+	write.table(tempdf_clusters, file=paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSE.T1_no",SE_loo_cages[i],".txt",sep=""), sep = "\t", quote = FALSE, row.names = F)
+
+	## Reload table if desired
+	#assign(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSE.T1_no", SE_loo_cages[i], sep=""), read.table(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSE.T1_no", SE_loo_cages[i], ".txt",sep=""), header=TRUE))
+
+	## Grab logp values for current LOO cage
+	tempdf_plot <- glm_PAvSvSEvE_LOO_logp[,c(1,2,i+2)]
+	names(tempdf_plot)[3] <- "EvSE.T1.logp"
+	names(tempdf_clusters)[3] <- "EvSE.T1.logp"
+
+	# This manhattan plot shows the contrast between E and SE samples in TPT 1
+	assign(paste("manh.EvSE.T1.clust_no",SE_loo_cages[i],sep=""),
+	ggplot(tempdf_plot, aes(POS, EvSE.T1.logp)) +
+		geom_line(alpha = 1, colour = "#CCCCCC") +
+		## Highlight clusters significant in SE vs E GLM contrast
+		geom_point(data=tempdf_clusters,aes(POS, EvSE.T1.logp), color = tempdf_clusters$color, size = 0.1) +
+		## General formatting commands
+		facet_grid(~ CHROM, scales = "free_x", space = "free_x") +
+		scale_y_continuous(limits = c(0, max(na.omit(tempdf_plot$EvSE.T1.logp)))) +
+		scale_x_continuous(breaks=c(0, 5000000, 10000000, 15000000, 20000000, 25000000, 30000000),guide = guide_axis(angle = 45)) + 
+		labs(col="candidate\ngene\n-log10(p)") +
+		xlab("chromosome position") +
+		ylab("-log10(p)") +
+		theme_classic() +
+		theme(legend.position = "none") +
+		ggtitle(paste("E vs SE (TPT1): no cage ",SE_loo_cages[i],sep="")))
+
+}
+
+## Plot the five EvSE.T1 LOO clustered manhattans together
+pdf(file = "rudflies_2023_redo.EvSE.T1.rolwin501clust.LOO.glm.manh.pdf", width=7.5, height=10)
+	ggarrange(manh.EvSE.T1.clust_no11, 
+		manh.EvSE.T1.clust_no21, 
+		manh.EvSE.T1.clust_no27, 
+		manh.EvSE.T1.clust_no41, 
+		manh.EvSE.T1.clust_no45,
+        ncol = 1, nrow = 5)
+dev.off()
+
+
+
+### Plot EvSP.T1 clusters per contrast ###
+
+## Check all contrasts
+for(i in 1:5) { #loop through SP cages
+	## Grab data frame for left out cage
+	tempdf <- get(paste("glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no",SP_loo_cages[i],sep="")) 
+
+	### E vs SP contrast
+	## Set each cluster as an alternating color
+	tempdf$color <- rep(c("blue4", "orange3"),length.out = nrow(as.data.frame(tempdf)))
+
+	## Convert to normal data frame
+	temp.df <- as.data.frame(tempdf)
+
+	## Use locus info to name each cluster
+	temp.df$clust <- paste(temp.df$seqnames,temp.df$start,temp.df$end,sep="_")
+
+	## Create a bed file using original SNP loci with "dummy" stop site
+	glm_PAvSvSEvE_LOO_bed <- as.data.frame(cbind(CHROM=as.character(glm_PAvSvSEvE_LOO$CHROM), POS=as.integer(glm_PAvSvSEvE_LOO$POS), STOP=as.integer(glm_PAvSvSEvE_LOO$POS + 1)))
+
+	## Sort bed file
+	glm_PAvSvSEvE_LOO_bed <- glm_PAvSvSEvE_LOO_bed[order(glm_PAvSvSEvE_LOO_bed[,1], as.numeric(glm_PAvSvSEvE_LOO_bed[,2])),]
+
+	## Create genomic ranges object with new bed file
+	glm_PAvSvSEvE_LOO_bed <- GRanges(seqnames=glm_PAvSvSEvE_LOO_bed[,1],
+		ranges=IRanges(as.integer(glm_PAvSvSEvE_LOO_bed[,2]), 	as.integer(glm_PAvSvSEvE_LOO_bed[,2])+1),
+		strand="+",
+		pos=glm_PAvSvSEvE_LOO_bed[,2])
+
+	## Merge original loci with intervals so we can assign cluster colors for plotting
+	tempdf_overlap <- as.data.frame(mergeByOverlaps(glm_PAvSvSEvE_LOO_bed, tempdf))
+
+	## Reformat merged table to retain only relevant columns
+	tempdf_overlap <- as.data.frame(cbind(CHROM=as.character(tempdf_overlap[,1]), 
+		POS=as.integer(tempdf_overlap[,2]),
+		paste(tempdf_overlap[,8],
+		tempdf_overlap[,9],
+		tempdf_overlap[,10],sep="_"),
+		color=tempdf_overlap[,13]))
+
+	## Rename cluster column header
+	names(tempdf_overlap)[3] = "clust"
+
+	## Finally, merge -log10(p) values for making manhattans
+	tempdf_clusters <- merge(glm_PAvSvSEvE_LOO_logp[,c(1,2,i+7)], tempdf_overlap, by=c("CHROM","POS"))
+
+	## Save table for future use
+	assign(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSP.T1_no", SP_loo_cages[i], sep=""), tempdf_clusters)
+	## Write table
+	write.table(tempdf_clusters, file=paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSP.T1_no",SP_loo_cages[i],".txt",sep=""), sep = "\t", quote = FALSE, row.names = F)
+
+	## Reload table if desired
+	#assign(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSP.T1_no", SP_loo_cages[i], sep=""), read.table(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSP.T1_no", SP_loo_cages[i], ".txt",sep=""), header=TRUE))
+
+	## Grab logp values for current LOO cage
+	tempdf_plot <- glm_PAvSvSEvE_LOO_logp[,c(1,2,i+7)]
+	names(tempdf_plot)[3] <- "EvSP.T1.logp"
+	names(tempdf_clusters)[3] <- "EvSP.T1.logp"
+
+	# This manhattan plot shows the contrast between E and SP samples in TPT 1
+	assign(paste("manh.EvSP.T1.clust_no",SP_loo_cages[i],sep=""),
+	ggplot(tempdf_plot, aes(POS, EvSP.T1.logp)) +
+		geom_line(alpha = 1, colour = "#CCCCCC") +
+		## Highlight clusters significant in SP vs E GLM contrast
+		geom_point(data=tempdf_clusters,aes(POS, EvSP.T1.logp), color = tempdf_clusters$color, size = 0.1) +
+		## General formatting commands
+		facet_grid(~ CHROM, scales = "free_x", space = "free_x") +
+		scale_y_continuous(limits = c(0, max(na.omit(tempdf_plot$EvSP.T1.logp)))) +
+		scale_x_continuous(breaks=c(0, 5000000, 10000000, 15000000, 20000000, 25000000, 30000000),guide = guide_axis(angle = 45)) + 
+		labs(col="candidate\ngene\n-log10(p)") +
+		xlab("chromosome position") +
+		ylab("-log10(p)") +
+		theme_classic() +
+		theme(legend.position = "none") +
+		ggtitle(paste("E vs SP (TPT1): no cage ",SP_loo_cages[i],sep="")))
+
+}
+
+## Plot the five LOO pairwise TPT1 treatment comparisons together
+pdf(file = "rudflies_2023_redo.EvSP.T1.rolwin501clust.LOO.glm.manh.pdf", width=7.5, height=10)
+	ggarrange(manh.EvSP.T1.clust_no3, 
+		manh.EvSP.T1.clust_no7, 
+		manh.EvSP.T1.clust_no15, 
+		manh.EvSP.T1.clust_no33, 
+		manh.EvSP.T1.clust_no37,
+        ncol = 1, nrow = 5)
+dev.off()
+
+
+
+### Next let's analyze EvSP.T4 leave-one-out GLM results ###
+
+###############################################
+### Try to find clusters for data reduction ###
+###############################################
+
+### Create a table with leave-one-out p, fdr, and logp tables for EvSP.T4
+## Create lists of EvSP.T4 LOO header patterns
+SP_loo_cages4 <- unlist(lapply(SP_loo_cages, function(x) paste0("EvSP.T4_no", x)))
+SP_loo_cages4 <- paste(SP_loo_cages4, collapse = "|")
+
+## Select columns that match any LOO cage/contrast in the list
+glm_PAvSvE_TPT4_LOO <- glm_PAvSvE_TPT4 %>% select(matches(SP_loo_cages4))
+
+## Remove extra unnecessary matches
+glm_PAvSvE_TPT4_LOO <- select(glm_PAvSvE_TPT4_LOO,-contains("SEvSP"))
+
+## Add locus columns
+glm_PAvSvE_TPT4_LOO <- cbind(glm_PAvSvE_TPT4[,c(1:2)],glm_PAvSvE_TPT4_LOO)
+
+## Store duplicate table with corrected p-values for later
+glm_PAvSvE_TPT4_LOO_fdr <- select(glm_PAvSvE_TPT4_LOO,contains("CHROM") | contains("POS") | contains("fdr"))
+
+## Store duplicate table with -log10(P) values for later
+glm_PAvSvE_TPT4_LOO_logp <- select(glm_PAvSvE_TPT4_LOO,contains("CHROM") | contains("POS") | contains("logp"))
+
+## Remove unnecessary columns for clustering
+glm_PAvSvE_TPT4_LOO <- select(glm_PAvSvE_TPT4_LOO,-contains("fdr"))
+glm_PAvSvE_TPT4_LOO <- select(glm_PAvSvE_TPT4_LOO,-contains("logp"))
+
+
+### Create a table with leave-one-out frequency difference tables for EvSP.T4
+## Create lists of SP LOO frequency difference tables
+SP_loo_cages5 <- unlist(lapply(SP_loo_cages, function(x) paste0("freq_diff_t4_no", x)))
+
+## Grab locus columns to intialize master LOO frequency table
+freq_diff_t4_allLOO <- freq_diff_t4_no3_bed[,c(1:2)]
+## Cycle through all SP LOO tables and grab column 1 (EvSP.T4)
+for(f in SP_loo_cages5) {
+	freq_diff_t4_allLOO <- cbind(freq_diff_t4_allLOO,get(f)[,1] )
+}
+## Name columns
+names(freq_diff_t4_allLOO)[c(3:7)] <- SP_loo_cages5
+names(freq_diff_t4_allLOO) <- gsub("freq_diff_t4","EvSP.T4",names(freq_diff_t4_allLOO))
+
+
+## Join FDR and delta frequency cols that will be used to calculate scores for clustering
+glm_PAvSvE_TPT4_LOO_score <- merge(glm_PAvSvE_TPT4_LOO_fdr, freq_diff_t4_allLOO, by=c("CHROM","POS"))
+## Sort by locus
+glm_PAvSvE_TPT4_LOO_score <- glm_PAvSvE_TPT4_LOO_score[order(glm_PAvSvE_TPT4_LOO_score[,1], glm_PAvSvE_TPT4_LOO_score[,2]), ]
+
+## Assign scores based on a combination of significance level and mean frequency diffs
+## These criteria were borrowed and modified from Rudman et. al, 2022:
+## "Direct observation of adaptive tracking on ecological time scales in Drosophila"
+for(f in c(3:7)) {
+	glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score[,f] > 0.2,f+10] <- 0
+	glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score[,f] < 0.2 | (glm_PAvSvE_TPT4_LOO_score[,f] > 0.2 & glm_PAvSvE_TPT4_LOO_score[,f+5] > 0.02),f+10] <- 1
+	glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score[,f] < 0.05 & glm_PAvSvE_TPT4_LOO_score[,f+5] > 0.02,f+10] <- 2
+	glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score[,f] < 0.01 & glm_PAvSvE_TPT4_LOO_score[,f+5] > 0.02,f+10] <- 3
+	glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score[,f] < 0.001 & glm_PAvSvE_TPT4_LOO_score[,f+5] > 0.02,f+10] <- 4
+	glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score[,f] < 0.0001 & glm_PAvSvE_TPT4_LOO_score[,f+5] > 0.02,f+10] <- 5
+	glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score[,f] < 0.00001 & glm_PAvSvE_TPT4_LOO_score[,f+5] > 0.02,f+10] <- 6
+	names(glm_PAvSvE_TPT4_LOO_score)[f+10] <- paste(names(glm_PAvSvE_TPT4_LOO_score[f]),".score",sep="")
+	names(glm_PAvSvE_TPT4_LOO_score)[f+10] <- gsub(".fdr",".score",names(glm_PAvSvE_TPT4_LOO_score)[f])
+}
+
+## Main idea is testing whether window-based scores are significantly higher than randomly 
+## assigned scores. Here, let's shuffle scores per chromosome to control for observed 
+## variable signals of selective sweeps across chromosomes.
+set.seed(42) 
+glm_PAvSvE_TPT4_LOO_score_rand <- c() #initialize data frame
+
+## Loop through all chromosomes
+for(i in unique(glm_PAvSvE_TPT4_LOO_score$CHROM)) {
+	shuffle_idx <- c()
+	tempCHROM <- glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score$CHROM==i,]
+	shuffle_idx <- append(shuffle_idx, sample(1:nrow(tempCHROM)))
+	tempCHROM[, c("CHROM", "POS")] <- tempCHROM[shuffle_idx, c("CHROM", "POS")]
+	glm_PAvSvE_TPT4_LOO_score_rand <- rbind(glm_PAvSvE_TPT4_LOO_score_rand,tempCHROM)
+}
+
+## Sort based on randomized loci
+glm_PAvSvE_TPT4_LOO_score_rand <- glm_PAvSvE_TPT4_LOO_score_rand[order(glm_PAvSvE_TPT4_LOO_score_rand[,1], glm_PAvSvE_TPT4_LOO_score_rand[,2]), ]
+
+
+### True loci window scores ###
+## Create indexes for each chromosome to slide over and calculate mean scores over 501-SNP 
+## windows. If we don't do this per chromosome, the average will be calculated across 
+## consecutive chromosomes.
+
+## 2L
+glm_T4_2L_LOO_true <- unique(glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score$CHROM=="2L",]) 
+glm_T4_2L_LOO_true <- glm_T4_2L_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_2L_LOO_true <- glm_T4_2L_LOO_true[is.finite(rowSums(glm_T4_2L_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_2L_LOO_true$POS <- as.integer(glm_T4_2L_LOO_true$POS)
+glm_T4_2L_LOO_true.rolwin501 <- glm_T4_2L_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_2L_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_2L_LOO_true[is.finite(glm_T4_2L_LOO_true[,i])=="TRUE",i])+100
+	glm_T4_2L_LOO_true[is.infinite(glm_T4_2L_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_2L_LOO_true.rolwin501 <- cbind(glm_T4_2L_LOO_true.rolwin501,slide_mean(glm_T4_2L_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_2L_LOO_true.rolwin501)[i] <- paste(names(glm_T4_2L_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## 2R
+glm_T4_2R_LOO_true <- unique(glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score$CHROM=="2R",])
+glm_T4_2R_LOO_true <- glm_T4_2R_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_2R_LOO_true <- glm_T4_2R_LOO_true[is.finite(rowSums(glm_T4_2R_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_2R_LOO_true$POS <- as.integer(glm_T4_2R_LOO_true$POS)
+glm_T4_2R_LOO_true.rolwin501 <- glm_T4_2R_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_2R_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_2R_LOO_true[is.finite(glm_T4_2R_LOO_true[,i])=="TRUE",i])+100
+	glm_T4_2R_LOO_true[is.infinite(glm_T4_2R_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_2R_LOO_true.rolwin501 <- cbind(glm_T4_2R_LOO_true.rolwin501,slide_mean(glm_T4_2R_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_2R_LOO_true.rolwin501)[i] <- paste(names(glm_T4_2R_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## 3L
+glm_T4_3L_LOO_true <- unique(glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score$CHROM=="3L",])
+glm_T4_3L_LOO_true <- glm_T4_3L_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_3L_LOO_true <- glm_T4_3L_LOO_true[is.finite(rowSums(glm_T4_3L_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_3L_LOO_true$POS <- as.integer(glm_T4_3L_LOO_true$POS)
+glm_T4_3L_LOO_true.rolwin501 <- glm_T4_3L_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_3L_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_3L_LOO_true[is.finite(glm_T4_3L_LOO_true[,i])=="TRUE",i])+100
+	glm_T4_3L_LOO_true[is.infinite(glm_T4_3L_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_3L_LOO_true.rolwin501 <- cbind(glm_T4_3L_LOO_true.rolwin501,slide_mean(glm_T4_3L_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_3L_LOO_true.rolwin501)[i] <- paste(names(glm_T4_3L_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## 3R
+glm_T4_3R_LOO_true <- unique(glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score$CHROM=="3R",])
+glm_T4_3R_LOO_true <- glm_T4_3R_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_3R_LOO_true <- glm_T4_3R_LOO_true[is.finite(rowSums(glm_T4_3R_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_3R_LOO_true$POS <- as.integer(glm_T4_3R_LOO_true$POS)
+glm_T4_3R_LOO_true.rolwin501 <- glm_T4_3R_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_3R_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_3R_LOO_true[is.finite(glm_T4_3R_LOO_true[,i])=="TRUE",i])+100
+	glm_T4_3R_LOO_true[is.infinite(glm_T4_3R_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_3R_LOO_true.rolwin501 <- cbind(glm_T4_3R_LOO_true.rolwin501,slide_mean(glm_T4_3R_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_3R_LOO_true.rolwin501)[i] <- paste(names(glm_T4_3R_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## X
+glm_T4_X_LOO_true <- unique(glm_PAvSvE_TPT4_LOO_score[glm_PAvSvE_TPT4_LOO_score$CHROM=="X",])
+glm_T4_X_LOO_true <- glm_T4_X_LOO_true %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_X_LOO_true <- glm_T4_X_LOO_true[is.finite(rowSums(glm_T4_X_LOO_true[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_X_LOO_true$POS <- as.integer(glm_T4_X_LOO_true$POS) #reformat
+glm_T4_X_LOO_true.rolwin501 <- glm_T4_X_LOO_true[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_X_LOO_true)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_X_LOO_true[is.finite(glm_T4_X_LOO_true[,i])=="TRUE",i])+100
+	glm_T4_X_LOO_true[is.infinite(glm_T4_X_LOO_true[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_X_LOO_true.rolwin501 <- cbind(glm_T4_X_LOO_true.rolwin501,slide_mean(glm_T4_X_LOO_true[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_X_LOO_true.rolwin501)[i] <- paste(names(glm_T4_X_LOO_true)[i], ".rolwin501", sep="")
+}
+
+## Now, join the the new rolling window tables for all chromosomes
+glm_PAvSvE_TPT4_LOO_score.rolwin501 <- na.omit(rbind(glm_T4_2L_LOO_true.rolwin501,glm_T4_2R_LOO_true.rolwin501,glm_T4_3L_LOO_true.rolwin501,glm_T4_3R_LOO_true.rolwin501,glm_T4_X_LOO_true.rolwin501))
+
+
+## How many sites remain after merging all filtered GLM results tables?
+dim(glm_PAvSvE_TPT4_LOO_score.rolwin501)
+#[1] 14253    17
+
+
+### Random locus window scores ###
+## Create indexes for each chromosome to slide over and calculate mean scores over 501-SNP 
+## windows. If we don't do this per chromosome, the average will be calculated across 
+## consecutive chromosomes.
+
+## 2L
+glm_T4_2L_LOO_rand <- unique(glm_PAvSvE_TPT4_LOO_score_rand[glm_PAvSvE_TPT4_LOO_score_rand$CHROM=="2L",]) 
+glm_T4_2L_LOO_rand <- glm_T4_2L_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_2L_LOO_rand <- glm_T4_2L_LOO_rand[is.finite(rowSums(glm_T4_2L_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_2L_LOO_rand$POS <- as.integer(glm_T4_2L_LOO_rand$POS)
+glm_T4_2L_LOO_rand.rolwin501 <- glm_T4_2L_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_2L_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_2L_LOO_rand[is.finite(glm_T4_2L_LOO_rand[,i])=="TRUE",i])+100
+	glm_T4_2L_LOO_rand[is.infinite(glm_T4_2L_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_2L_LOO_rand.rolwin501 <- cbind(glm_T4_2L_LOO_rand.rolwin501,slide_mean(glm_T4_2L_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_2L_LOO_rand.rolwin501)[i] <- paste(names(glm_T4_2L_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## 2R
+glm_T4_2R_LOO_rand <- unique(glm_PAvSvE_TPT4_LOO_score_rand[glm_PAvSvE_TPT4_LOO_score_rand$CHROM=="2R",])
+glm_T4_2R_LOO_rand <- glm_T4_2R_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_2R_LOO_rand <- glm_T4_2R_LOO_rand[is.finite(rowSums(glm_T4_2R_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_2R_LOO_rand$POS <- as.integer(glm_T4_2R_LOO_rand$POS)
+glm_T4_2R_LOO_rand.rolwin501 <- glm_T4_2R_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_2R_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_2R_LOO_rand[is.finite(glm_T4_2R_LOO_rand[,i])=="TRUE",i])+100
+	glm_T4_2R_LOO_rand[is.infinite(glm_T4_2R_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_2R_LOO_rand.rolwin501 <- cbind(glm_T4_2R_LOO_rand.rolwin501,slide_mean(glm_T4_2R_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_2R_LOO_rand.rolwin501)[i] <- paste(names(glm_T4_2R_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## 3L
+glm_T4_3L_LOO_rand <- unique(glm_PAvSvE_TPT4_LOO_score_rand[glm_PAvSvE_TPT4_LOO_score_rand$CHROM=="3L",])
+glm_T4_3L_LOO_rand <- glm_T4_3L_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_3L_LOO_rand <- glm_T4_3L_LOO_rand[is.finite(rowSums(glm_T4_3L_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_3L_LOO_rand$POS <- as.integer(glm_T4_3L_LOO_rand$POS)
+glm_T4_3L_LOO_rand.rolwin501 <- glm_T4_3L_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_3L_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_3L_LOO_rand[is.finite(glm_T4_3L_LOO_rand[,i])=="TRUE",i])+100
+	glm_T4_3L_LOO_rand[is.infinite(glm_T4_3L_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_3L_LOO_rand.rolwin501 <- cbind(glm_T4_3L_LOO_rand.rolwin501,slide_mean(glm_T4_3L_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_3L_LOO_rand.rolwin501)[i] <- paste(names(glm_T4_3L_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## 3R
+glm_T4_3R_LOO_rand <- unique(glm_PAvSvE_TPT4_LOO_score_rand[glm_PAvSvE_TPT4_LOO_score_rand$CHROM=="3R",])
+glm_T4_3R_LOO_rand <- glm_T4_3R_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_3R_LOO_rand <- glm_T4_3R_LOO_rand[is.finite(rowSums(glm_T4_3R_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_3R_LOO_rand$POS <- as.integer(glm_T4_3R_LOO_rand$POS)
+glm_T4_3R_LOO_rand.rolwin501 <- glm_T4_3R_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_3R_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_3R_LOO_rand[is.finite(glm_T4_3R_LOO_rand[,i])=="TRUE",i])+100
+	glm_T4_3R_LOO_rand[is.infinite(glm_T4_3R_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_3R_LOO_rand.rolwin501 <- cbind(glm_T4_3R_LOO_rand.rolwin501,slide_mean(glm_T4_3R_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_3R_LOO_rand.rolwin501)[i] <- paste(names(glm_T4_3R_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## X
+glm_T4_X_LOO_rand <- unique(glm_PAvSvE_TPT4_LOO_score_rand[glm_PAvSvE_TPT4_LOO_score_rand$CHROM=="X",])
+glm_T4_X_LOO_rand <- glm_T4_X_LOO_rand %>%
+  arrange(POS)
+## remove rows with infinite values that will mess up calculations
+#glm_T4_X_LOO_rand <- glm_T4_X_LOO_rand[is.finite(rowSums(glm_T4_X_LOO_rand[,-c(1:2)])),]
+## create new empty file for filtered rows
+glm_T4_X_LOO_rand$POS <- as.integer(glm_T4_X_LOO_rand$POS) #reformat
+glm_T4_X_LOO_rand.rolwin501 <- glm_T4_X_LOO_rand[,c(1,2)]
+
+for(i in 3:ncol(glm_T4_X_LOO_rand)) { #loop through all non-positional columns
+	# infinite values not allowed, so create a ceiling of the max finite value plus 100
+	# then assign to infinite values.
+	max.temp <- max(glm_T4_X_LOO_rand[is.finite(glm_T4_X_LOO_rand[,i])=="TRUE",i])+100
+	glm_T4_X_LOO_rand[is.infinite(glm_T4_X_LOO_rand[,i])=="TRUE",i] <- max.temp
+	# now calculate rolling means
+	glm_T4_X_LOO_rand.rolwin501 <- cbind(glm_T4_X_LOO_rand.rolwin501,slide_mean(glm_T4_X_LOO_rand[,i], before=250, after=250, step = 100))
+    colnames(glm_T4_X_LOO_rand.rolwin501)[i] <- paste(names(glm_T4_X_LOO_rand)[i], ".rolwin501", sep="")
+}
+
+## Now, join the the new rolling window tables for all chromosomes
+glm_PAvSvE_TPT4_LOO_score_rand.rolwin501 <- na.omit(rbind(glm_T4_2L_LOO_rand.rolwin501,glm_T4_2R_LOO_rand.rolwin501,glm_T4_3L_LOO_rand.rolwin501,glm_T4_3R_LOO_rand.rolwin501,glm_T4_X_LOO_rand.rolwin501))
+
+
+## How many sites remain after merging all filtered GLM results tables?
+dim(glm_PAvSvE_TPT4_LOO_score_rand.rolwin501)
+#[1] 14253    17
+
+
+### T-tests within windows ###
+## Now we want to perform one-sided t-tests on scores within true locus windows and random 
+## locus windows. Significant windows with true locus scores higher than random locus 
+## scores will later be merged.
+
+## Check all contrasts
+for(i in 13:17) { #loop through score columns, "SP" contrasts with "E" pops
+	## 2L
+	glm_T4_2L_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_T4_2L_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_T4_2L_LOO_ttest <- rbind(glm_T4_2L_LOO_ttest,
+    		cbind(glm_T4_2L_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_T4_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),2]),
+    			STOP=max(glm_T4_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_T4_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),i], glm_T4_2L_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_T4_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),i]),
+    			med_score=median(glm_T4_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),i]),
+    			max_score=max(glm_T4_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),i]),
+    			rand_score=mean(glm_T4_2L_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),i]),
+    			rand_med_score=median(glm_T4_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),i]),
+    			rand_max_score=max(glm_T4_2L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2L_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_T4_2L_LOO_ttest_",gsub(".score","",names(glm_T4_2L_LOO_true)[i])), glm_T4_2L_LOO_ttest)
+
+	## 2R
+	glm_T4_2R_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_T4_2R_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_T4_2R_LOO_ttest <- rbind(glm_T4_2R_LOO_ttest,
+    		cbind(glm_T4_2R_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_T4_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),2]),
+    			STOP=max(glm_T4_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_T4_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),i], glm_T4_2R_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_T4_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),i]),
+    			med_score=median(glm_T4_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),i]),
+    			max_score=max(glm_T4_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),i]),
+    			rand_score=mean(glm_T4_2R_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),i]),
+    			rand_med_score=median(glm_T4_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),i]),
+    			rand_max_score=max(glm_T4_2R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_2R_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_T4_2R_LOO_ttest_",gsub(".score","",names(glm_T4_2R_LOO_true)[i])), glm_T4_2R_LOO_ttest)
+
+	## 3L
+	glm_T4_3L_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_T4_3L_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_T4_3L_LOO_ttest <- rbind(glm_T4_3L_LOO_ttest,
+    		cbind(glm_T4_3L_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_T4_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),2]),
+    			STOP=max(glm_T4_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_T4_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),i], glm_T4_3L_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_T4_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),i]),
+    			med_score=median(glm_T4_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),i]),
+    			max_score=max(glm_T4_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),i]),
+    			rand_score=mean(glm_T4_3L_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),i]),
+    			rand_med_score=median(glm_T4_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),i]),
+    			rand_max_score=max(glm_T4_3L_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3L_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_T4_3L_LOO_ttest_",gsub(".score","",names(glm_T4_3L_LOO_true)[i])), glm_T4_3L_LOO_ttest)
+
+	## 3R
+	glm_T4_3R_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_T4_3R_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_T4_3R_LOO_ttest <- rbind(glm_T4_3R_LOO_ttest,
+    		cbind(glm_T4_3R_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_T4_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),2]),
+    			STOP=max(glm_T4_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_T4_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),i], glm_T4_3R_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_T4_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),i]),
+    			med_score=median(glm_T4_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),i]),
+    			max_score=max(glm_T4_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),i]),
+    			rand_score=mean(glm_T4_3R_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),i]),
+    			rand_med_score=median(glm_T4_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),i]),
+    			rand_max_score=max(glm_T4_3R_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_3R_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_T4_3R_LOO_ttest_",gsub(".score","",names(glm_T4_3R_LOO_true)[i])), glm_T4_3R_LOO_ttest)
+
+	## X
+	glm_T4_X_LOO_ttest <- c()
+
+    for(j in seq(from = 1, to = nrow(glm_T4_X_LOO_true), by = 100)) { #use 100-SNP step size
+    	tryCatch({
+    	glm_T4_X_LOO_ttest <- rbind(glm_T4_X_LOO_ttest,
+    		cbind(glm_T4_X_LOO_true[j,c(1:2)],
+    			#Set range
+    			START=min(glm_T4_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),2]),
+    			STOP=max(glm_T4_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),2]),
+    			#Run test
+    			t(t.test(glm_T4_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),i], glm_T4_X_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),i], alternative = "greater")[c(1,2,3,7)]),
+    			#Save various score summary stats for filtering
+    			mean_score=mean(glm_T4_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),i]),
+    			med_score=median(glm_T4_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),i]),
+    			max_score=max(glm_T4_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),i]),
+    			rand_score=mean(glm_T4_X_LOO_rand[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),i]),
+    			rand_med_score=median(glm_T4_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),i]),
+    			rand_max_score=max(glm_T4_X_LOO_true[c(max(j-250,1):min(j+250,nrow(glm_T4_X_LOO_true))),i])))
+    	}, error=function(e){})
+    }
+    assign(paste0("glm_T4_X_LOO_ttest_",gsub(".score","",names(glm_T4_X_LOO_true)[i])), glm_T4_X_LOO_ttest)
+
+
+	## Now, join stats from the the new rolling window tables for all chromosomes
+    glm_PAvSvE_TPT4_LOO_score_ttest <- na.omit(rbind(glm_T4_2L_LOO_ttest,glm_T4_2R_LOO_ttest,glm_T4_3L_LOO_ttest,glm_T4_3R_LOO_ttest,glm_T4_X_LOO_ttest))
+    ## Reformat
+    glm_PAvSvE_TPT4_LOO_score_ttest$statistic <- sapply(glm_PAvSvE_TPT4_LOO_score_ttest$statistic, toString)
+    glm_PAvSvE_TPT4_LOO_score_ttest$parameter <- sapply(glm_PAvSvE_TPT4_LOO_score_ttest$parameter, toString)
+    glm_PAvSvE_TPT4_LOO_score_ttest$p.value <- sapply(glm_PAvSvE_TPT4_LOO_score_ttest$p.value, toString)
+    glm_PAvSvE_TPT4_LOO_score_ttest$stderr <- sapply(glm_PAvSvE_TPT4_LOO_score_ttest$stderr, toString)
+    ## Correct t-test p-values
+    glm_PAvSvE_TPT4_LOO_score_ttest$fdr <- p.adjust(glm_PAvSvE_TPT4_LOO_score_ttest$p.value, method = "fdr")    
+    ## Name table for particular contrast 
+    assign(paste0("glm_PAvSvE_TPT4_LOO_score_ttest_",
+    	gsub(".score","",names(glm_T4_X_LOO_true)[i])), glm_PAvSvE_TPT4_LOO_score_ttest)
+    ## Save table for particular contrast 
+    write.table(glm_PAvSvE_TPT4_LOO_score_ttest, file=paste0("glm_PAvSvE_TPT4_LOO_score_ttest_",
+    	gsub(".score","",names(glm_T4_X_LOO_true)[i]),".txt"),
+    	sep = "\t", quote = FALSE, row.names = F)
+    
+    ## Filter windows for significant t-test results and minimum [max] score of 2.
+    glm_PAvSvE_TPT4_LOO_score_ttest_filt <- glm_PAvSvE_TPT4_LOO_score_ttest[glm_PAvSvE_TPT4_LOO_score_ttest$fdr<0.05 & glm_PAvSvE_TPT4_LOO_score_ttest$max_score>=2,]
+    
+    ## We tried filtering by mean and median scores as well, but the EvSP had nothing.
+    ## Using max scores within windows as filtering criteria worked for all contrasts.
+    #glm_PAvSvE_TPT4_LOO_score_ttest_filt <- glm_PAvSvE_TPT4_LOO_score_ttest[glm_PAvSvE_TPT4_LOO_score_ttest$fdr<0.05 & glm_PAvSvE_TPT4_LOO_score_ttest$mean_score>=2,]
+    
+    ## Convert loci and window ranges to Genomic Ranges table
+	gr <- GRanges(seqnames=glm_PAvSvE_TPT4_LOO_score_ttest_filt[,1],
+		ranges=IRanges(as.integer(glm_PAvSvE_TPT4_LOO_score_ttest_filt[,3]), 	as.integer(glm_PAvSvE_TPT4_LOO_score_ttest_filt[,4])),
+		strand="+",
+		pos=glm_PAvSvE_TPT4_LOO_score_ttest_filt[,2])
+
+	## Now merge all overlapping significant windows
+	merged_gr_T4_LOO <- reduce(gr)
+    ## Name table for particular contrast 
+	assign(paste0("glm_PAvSvE_TPT4_LOO_score_ttest_intervals_", 
+		gsub(".score","",names(glm_T4_X_LOO_true)[i])), merged_gr_T4_LOO)
+	## Save table for particular contrast 
+	write.table(merged_gr_T4_LOO, file=paste0("glm_PAvSvE_TPT4_LOO_score_ttest_intervals_",
+		gsub(".score","",names(glm_T4_X_LOO_true)[i]),".txt"),
+		sep = "\t", quote = FALSE, row.names = F)
+}
+
+## How many merged clusters in each contrast?
+dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no3))
+#[1] 360  5
+dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no7))
+#[1] 374  5
+dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no15))
+#[1] 325  5
+dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no33))
+#[1] 363  5
+dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no37))
+#[1] 283  5
+
+
+### Plot clusters per EvSP.T4 contrast ###
+
+## Check all contrasts
+for(i in 1:5) { #loop through SP cages
+	## Grab data frame for left out cage
+	tempdf <- get(paste("glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no",SP_loo_cages[i],sep="")) 
+
+	### E vs SP contrast
+	## Set each cluster as an alternating color
+	tempdf$color <- rep(c("blue4", "orange3"),length.out = nrow(as.data.frame(tempdf)))
+
+	## Convert to normal data frame
+	temp.df <- as.data.frame(tempdf)
+
+	## Use locus info to name each cluster
+	temp.df$clust <- paste(temp.df$seqnames,temp.df$start,temp.df$end,sep="_")
+
+	## Create a bed file using original SNP loci with "dummy" stop site
+	glm_PAvSvE_TPT4_LOO_bed <- as.data.frame(cbind(CHROM=as.character(glm_PAvSvE_TPT4_LOO$CHROM), POS=as.integer(glm_PAvSvE_TPT4_LOO$POS), STOP=as.integer(glm_PAvSvE_TPT4_LOO$POS + 1)))
+
+	## Sort bed file
+	glm_PAvSvE_TPT4_LOO_bed <- glm_PAvSvE_TPT4_LOO_bed[order(glm_PAvSvE_TPT4_LOO_bed[,1], as.numeric(glm_PAvSvE_TPT4_LOO_bed[,2])),]
+
+	## Create genomic ranges object with new bed file
+	glm_PAvSvE_TPT4_LOO_bed <- GRanges(seqnames=glm_PAvSvE_TPT4_LOO_bed[,1],
+		ranges=IRanges(as.integer(glm_PAvSvE_TPT4_LOO_bed[,2]), 	as.integer(glm_PAvSvE_TPT4_LOO_bed[,2])+1),
+		strand="+",
+		pos=glm_PAvSvE_TPT4_LOO_bed[,2])
+
+	## Merge original loci with intervals so we can assign cluster colors for plotting
+	tempdf_overlap <- as.data.frame(mergeByOverlaps(glm_PAvSvE_TPT4_LOO_bed, tempdf))
+
+	## Reformat merged table to retain only relevant columns
+	tempdf_overlap <- as.data.frame(cbind(CHROM=as.character(tempdf_overlap[,1]), 
+		POS=as.integer(tempdf_overlap[,2]),
+		paste(tempdf_overlap[,8],
+		tempdf_overlap[,9],
+		tempdf_overlap[,10],sep="_"),
+		color=tempdf_overlap[,13]))
+
+	## Rename cluster column header
+	names(tempdf_overlap)[3] = "clust"
+
+	## Finally, merge -log10(p) values for making manhattans
+	tempdf_clusters <- merge(glm_PAvSvE_TPT4_LOO_logp[,c(1,2,i+2)], tempdf_overlap, by=c("CHROM","POS"))
+
+	## Save table for future use
+	assign(paste("glm_PAvSvE_TPT4_LOO_score_ttest_clusters_EvSP.T4_no", SP_loo_cages[i], sep=""), tempdf_clusters)
+	## Write table
+	write.table(tempdf_clusters, file=paste("glm_PAvSvE_TPT4_LOO_score_ttest_clusters_EvSP.T4_no",SP_loo_cages[i],".txt",sep=""), sep = "\t", quote = FALSE, row.names = F)
+
+	## Reload table if desired
+	#assign(paste("glm_PAvSvE_TPT4_LOO_score_ttest_clusters_EvSP.T4_no", SP_loo_cages[i], sep=""), read.table(paste("glm_PAvSvE_TPT4_LOO_score_ttest_clusters_EvSP.T4_no", SP_loo_cages[i], ".txt",sep=""), header=TRUE))
+
+	## Grab logp values for current LOO cage
+	tempdf_plot <- glm_PAvSvE_TPT4_LOO_logp[,c(1,2,i+2)]
+	names(tempdf_plot)[3] <- "EvSP.T4.logp"
+	names(tempdf_clusters)[3] <- "EvSP.T4.logp"
+
+	# This manhattan plot shows the contrast between E and SP samples in TPT 4
+	assign(paste("manh.EvSP.T4.clust_no",SP_loo_cages[i],sep=""),
+	ggplot(tempdf_plot, aes(POS, EvSP.T4.logp)) +
+		geom_line(alpha = 1, colour = "#CCCCCC") +
+		## Highlight clusters significant in SP vs E GLM contrast
+		geom_point(data=tempdf_clusters,aes(POS, EvSP.T4.logp), color = tempdf_clusters$color, size = 0.1) +
+		## General formatting commands
+		facet_grid(~ CHROM, scales = "free_x", space = "free_x") +
+		scale_y_continuous(limits = c(0, max(na.omit(tempdf_plot[!grepl("Inf", tempdf_plot$EvSP.T4.logp), ]$EvSP.T4.logp)))) +
+		scale_x_continuous(breaks=c(0, 5000000, 10000000, 15000000, 20000000, 25000000, 30000000),guide = guide_axis(angle = 45)) + 
+		labs(col="candidate\ngene\n-log10(p)") +
+		xlab("chromosome position") +
+		ylab("-log10(p)") +
+		theme_classic() +
+		theme(legend.position = "none") +
+		ggtitle(paste("E vs SP (TPT4): no cage ",SP_loo_cages[i],sep="")))
+
+}
+
+## Plot the five LOO pairwise TPT4 treatment comparisons together
+pdf(file = "rudflies_2023_redo.EvSP.T4.rolwin501clust.LOO.glm.manh.pdf", width=7.5, height=10)
+	ggarrange(manh.EvSP.T4.clust_no3, 
+		manh.EvSP.T4.clust_no7, 
+		manh.EvSP.T4.clust_no15, 
+		manh.EvSP.T4.clust_no33, 
+		manh.EvSP.T4.clust_no37,
+        ncol = 1, nrow = 5)
+dev.off()
+
+
+
+
+##############################################################################
+### Test for elevated allele frequency differences of top outliers in each ###
+### leave-one-out cluster set of interest: five samples from each of three ###
+### contrasts (EvSE.T1, EvSP.T1, EvSP.T4). There will be nine total        ###
+### comparisons (3 X 5).                                                   ###
+##############################################################################
+
+##############################################################
+### "EvSE T1" AF difference per "EvSE T1" cluster top SNPs ###
+##############################################################
+f=4 #pick E vs SE field for analysis
+
+for(i in 1:5) { #cycle through all SE T1 cages
+	### T-tests for all contrasts each leave one out GLM ###
+	assign(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",SE_loo_cages[i],sep=""),c())
+	## This run 100 iterations of focal and matched SNP selection
+	for(z in 1:100) { #set number of iterations
+		## Build dataframe with delta AF from left-out and left in samples for comparison
+		sign_temp <- cbind(get(paste("freq_diff_no",SE_loo_cages[i],"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",SE_loo_cages[i],"_bed",sep=""))[,f])
+		## Retrieve EvSE.T1 FDR value from LOO GLM
+		fdr_temp <- cbind(glm_PAvSvSEvE_LOO_fdr[,c(1:2)], fdr=glm_PAvSvSEvE_LOO_fdr[,i+2])
+		## Join them together
+		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
+		## Add VEP info for finding matches
+		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
+		## Add cluster info
+		vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSE.T1_no", SE_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
+		## Filter for significant sites
+		vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+
+		## Select top significant SNP per cluster
+		vep_sig <- c()
+		for(c in unique(vep_temp2$clust)) { 
+			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+		}
+		
+		## Select non-significant SNPs to use as potential background matched SNPs
+		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+		vep_sig_list <- unique(vep_sig[,c(1:2)])
+	
+		###First, determine how many matches so we can exclude those without any
+		bg.samp.counts <- c()
+	  	#This loop finds a random set of matched background genes
+	  	for(j in c(1:nrow(vep_sig))) {
+	  		#Select matched lists based on following criteria
+			type <- vep_sig[j,]$Consequence
+			chrom <- vep_sig[j,]$CHROM
+			found <- vep_sig[j,]$E
+			pos <- vep_sig[j,]$POS
+			#Pull one match per candidate gene
+			bg.samp.temp <- nrow(vep_nonsig %>%
+		 	filter( 
+		    	Consequence==type,
+				CHROM==chrom,
+				((E < found*1.25) & (E > found*.75)),
+				abs(POS - pos) > 50000))
+			#append to background list
+			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+	 	 }
+		
+		#Establish background non-candidate set
+	  	bg.samp.list <- c()
+	  	#This loop finds a random set of matched background genes
+	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  		#Select matched lists based on following criteria
+			type <- vep_sig[j,]$Consequence
+			chrom <- vep_sig[j,]$CHROM
+			found <- vep_sig[j,]$E
+			pos <- vep_sig[j,]$POS
+			#Pull one match per candidate gene
+			bg.samp.temp <- sample_n(vep_nonsig %>%
+		 		filter( 
+		    	Consequence==type,
+				CHROM==chrom,
+				((E < found*1.25) & (E > found*.75)),
+				abs(POS - pos) > 50000),1)
+			#append to background list
+			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	  	}
+  		
+  		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
+		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+
+		# Run the t-test
+		assign(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",SE_loo_cages[i],sep=""), rbind(get(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",SE_loo_cages[i],sep="")),cbind(contrast=names(get(paste("freq_diff_no",SE_loo_cages[i],"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+	}
+}
+
+## Join all t-test results together and save
+ttest_LOO_SET1clust_EvSET1_topsig <- rbind(cbind("no11","SE",ttest_LOO_SET1clust_EvSET1_topsig_no11),
+	cbind("no21","SE",ttest_LOO_SET1clust_EvSET1_topsig_no21),
+	cbind("no27","SE",ttest_LOO_SET1clust_EvSET1_topsig_no27),
+	cbind("no41","SE",ttest_LOO_SET1clust_EvSET1_topsig_no41),
+	cbind("no45","SE",ttest_LOO_SET1clust_EvSET1_topsig_no45))
+
+write.table(ttest_LOO_SET1clust_EvSET1_topsig, file="rudflies_2023_redo.ttest_LOO_SET1clust_EvSET1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
+
+
+
+##############################################################
+### "EvSP T1" AF difference per "EvSP T1" cluster top SNPs ###
+##############################################################
+f=5 #pick E vs SP field for analysis
+
+for(i in 1:5) { #cycle through all SP T1 cages
+	### T-tests for all contrasts each leave one out GLM ###
+	assign(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[i],sep=""),c())
+	## This run 100 iterations of focal and matched SNP selection
+	for(z in 1:100) { #set number of iterations
+		## Build dataframe with delta AF from left-out and left in samples for comparison
+		sign_temp <- cbind(get(paste("freq_diff_no",SP_loo_cages[i],"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",SP_loo_cages[i],"_bed",sep=""))[,f])
+		## Retrieve EvSP.T1 FDR value from LOO GLM
+		fdr_temp <- cbind(glm_PAvSvSEvE_LOO_fdr[,c(1:2)], fdr=glm_PAvSvSEvE_LOO_fdr[,i+7])
+		## Join them together
+		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
+		## Add VEP info for finding matches
+		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
+		## Add cluster info
+		vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSP.T1_no", SP_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
+		## Filter for significant sites
+		vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+
+		## Select top significant SNP per cluster
+		vep_sig <- c()
+		for(c in unique(vep_temp2$clust)) { 
+			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+		}
+		
+		## Select non-significant SNPs to use as potential background matched SNPs
+		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+		vep_sig_list <- unique(vep_sig[,c(1:2)])
+	
+		###First, determine how many matches so we can exclude those without any
+		bg.samp.counts <- c()
+	  	#This loop finds a random set of matched background genes
+	  	for(j in c(1:nrow(vep_sig))) {
+	  		#Select matched lists based on following criteria
+			type <- vep_sig[j,]$Consequence
+			chrom <- vep_sig[j,]$CHROM
+			found <- vep_sig[j,]$E
+			pos <- vep_sig[j,]$POS
+			#Pull one match per candidate gene
+			bg.samp.temp <- nrow(vep_nonsig %>%
+		 	filter( 
+		    	Consequence==type,
+				CHROM==chrom,
+				((E < found*1.25) & (E > found*.75)),
+				abs(POS - pos) > 50000))
+			#append to background list
+			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+	 	 }
+		
+		#Establish background non-candidate set
+	  	bg.samp.list <- c()
+	  	#This loop finds a random set of matched background genes
+	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  		#Select matched lists based on following criteria
+			type <- vep_sig[j,]$Consequence
+			chrom <- vep_sig[j,]$CHROM
+			found <- vep_sig[j,]$E
+			pos <- vep_sig[j,]$POS
+			#Pull one match per candidate gene
+			bg.samp.temp <- sample_n(vep_nonsig %>%
+		 		filter( 
+		    	Consequence==type,
+				CHROM==chrom,
+				((E < found*1.25) & (E > found*.75)),
+				abs(POS - pos) > 50000),1)
+			#append to background list
+			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	  	}
+  		
+  		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
+		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+
+		# Run the t-test
+		assign(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[i],sep=""), rbind(get(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[i],sep="")),cbind(contrast=names(get(paste("freq_diff_no",SP_loo_cages[i],"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+	}
+}
+
+## Join all t-test results together and save
+ttest_LOO_SPT1clust_EvSPT1_topsig <- rbind(cbind("no3","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no3),
+	cbind("no7","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no7),
+	cbind("no15","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no15),
+	cbind("no33","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no33),
+	cbind("no37","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no37))
+
+write.table(ttest_LOO_SPT1clust_EvSPT1_topsig, file="rudflies_2023_redo.ttest_LOO_SPT1clust_EvSPT1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
+
+
+##############################################################
+### "EvSP T4" AF difference per "EvSP T4" cluster top SNPs ###
+##############################################################
+f=4 #pick E vs SP field for analysis
+
+for(i in 1:5) { #cycle through all SP T4 cages
+	### T-tests for all contrasts each leave one out GLM ###
+	assign(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[i],sep=""),c())
+	## This run 100 iterations of focal and matched SNP selection
+	for(z in 1:100) { #set number of iterations
+		## Build dataframe with delta AF from left-out and left in samples for comparison
+		sign_temp <- cbind(get(paste("freq_diff_t4_no",SP_loo_cages[i],"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_t4_only",SP_loo_cages[i],"_bed",sep=""))[,f])
+		## Retrieve EvSP.T4 FDR value from full-sample GLM
+		fdr_temp <- cbind(glm_PAvSvE_TPT4_LOO[,c(1:2)], fdr=glm_PAvSvE_TPT4_LOO[,i+2])
+		## Join them together
+		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
+		## Add VEP info for finding matches
+		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
+		## Add cluster info
+		vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvE_TPT4_LOO_score_ttest_clusters_EvSP.T4_no", SP_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
+		## Filter for significant sites
+		vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+		## Select top significant SNP per cluster
+		vep_sig <- c()
+		for(c in unique(vep_temp2$clust)) { 
+			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+		}
+		
+		## Select non-significant SNPs to use as potential background matched SNPs
+		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+		vep_sig_list <- unique(vep_sig[,c(1:2)])
+	
+		###First, determine how many matches so we can exclude those without any
+		bg.samp.counts <- c()
+	  	#This loop finds a random set of matched background genes
+	  	for(j in c(1:nrow(vep_sig))) {
+	  		#Select matched lists based on following criteria
+			type <- vep_sig[j,]$Consequence
+			chrom <- vep_sig[j,]$CHROM
+			found <- vep_sig[j,]$E
+			pos <- vep_sig[j,]$POS
+			#Pull one match per candidate gene
+			bg.samp.temp <- nrow(vep_nonsig %>%
+		 	filter( 
+		    	Consequence==type,
+				CHROM==chrom,
+				((E < found*1.25) & (E > found*.75)),
+				abs(POS - pos) > 50000))
+			#append to background list
+			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+	 	 }
+		
+		#Establish background non-candidate set
+	  	bg.samp.list <- c()
+	  	#This loop finds a random set of matched background genes
+	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  		#Select matched lists based on following criteria
+			type <- vep_sig[j,]$Consequence
+			chrom <- vep_sig[j,]$CHROM
+			found <- vep_sig[j,]$E
+			pos <- vep_sig[j,]$POS
+			#Pull one match per candidate gene
+			bg.samp.temp <- sample_n(vep_nonsig %>%
+		 		filter( 
+		    	Consequence==type,
+				CHROM==chrom,
+				((E < found*1.25) & (E > found*.75)),
+				abs(POS - pos) > 50000),1)
+			#append to background list
+			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	  	}
+  		
+  		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
+		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+
+		# Run the t-test
+		assign(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[i],sep=""), rbind(get(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[i],sep="")),cbind(contrast=names(get(paste("freq_diff_t4_no",SP_loo_cages[i],"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+	}
+}
+
+## Join all t-test results together and save
+ttest_LOO_SPT4clust_EvSPT4_topsig <- rbind(cbind("no3","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no3),
+	cbind("no7","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no7),
+	cbind("no15","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no15),
+	cbind("no33","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no33),
+	cbind("no37","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no37))
+
+write.table(ttest_LOO_SPT4clust_EvSPT4_topsig, file="rudflies_2023_redo.ttest_LOO_SPT4clust_EvSPT4_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)

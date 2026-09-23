@@ -7,7 +7,7 @@
 
 ### In R ###
 #configure r environment
-setwd("/scratch/user/jfaberha/20260915_042547/admera/gp_analysis/rudflies_2023_redo/r/scripts/dryad_upload")
+setwd("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/main_analysis")
 library(emmeans)
 library(matrixStats)
 library(ACER)
@@ -41,11 +41,11 @@ sample_cols <- c("#D26183","#495184","#848556","#D9B851")
 #################################
 
 ## Variant Effect Predictor (VEP) annotation file with appended FLYCADD scores
-vep <- read.table("filtered-all.annot.vcf.FLYCADD.tsv", header=TRUE) 
+vep <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/filtered-all.annot.vcf.FLYCADD.tsv", header=TRUE) 
 ## Sample metadata table
-haf.meta <- read.table("rudflies_2023_meta.tsv", header=TRUE)
+haf.meta <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_meta.tsv", header=TRUE)
 ## Hafpipe imputed allele frequency table
-haf.freq <- read.delim("rudflies_2023_hafpipe.csv", header=TRUE, sep = ",")
+haf.freq <- read.delim("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_hafpipe.csv", header=TRUE, sep = ",")
 
 ## Do a bit of reformatting for the frequency table header
 names(haf.freq) <- gsub("[.]af","",names(haf.freq))
@@ -101,17 +101,17 @@ haf.meta.T1filt <- haf.meta.T1filt[order(haf.meta.T1filt$samp),]
 
 ### Start with PA and S contrasts ###
 ## Load PA vs S, all samples combined
-contrast.PAvS.treat.all <- read.table("rudflies_2023_PAvS_treat.all.table.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.treat.all <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_treat.all.table.GLMcontrast.txt", header=TRUE)
 contrast.PAvS.treat.all <- contrast.PAvS.treat.all[,-3] #remove AF mean column
 names(contrast.PAvS.treat.all)[3] <- "PAvS" #label glm results column
 ## Load PA vs S for each timepoint
-contrast.PAvS.treat <- read.table("rudflies_2023_PAvS_treat.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.treat <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_treat.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.treat) <- c("CHROM","POS","PAvS.T1","PAvS.T2","PAvS.T3","PAvS.T4")
 ## Load timepoint contrasts using PA and S combined
-contrast.PAvS.tpt <- read.table("rudflies_2023_PAvS_tpt.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.tpt <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_tpt.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.tpt) <- c("CHROM","POS","PA.S.T1vT2","PA.S.T1.T3","PA.S.T1vT4","PA.S.T2vT3","PA.S.T2vT4","PA.S.T3vT4") #label glm results columns
 ## Load PA and S "timepoint:treatment" interaction
-contrast.PAvS.int <- read.table("rudflies_2023_PAvS_int.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.int <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_int.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.int) <- c("CHROM","POS","int.PAvS.T1vT2","int.PAvS.T1vT3","int.PAvS.T1vT4","int.PAvS.T2vT3","int.PAvS.T2vT4","int.PAvS.T3vT4") #label glm results columns
 contrast.PAvS <- cbind(contrast.PAvS.treat, contrast.PAvS.tpt[,-c(1,2)], contrast.PAvS.int[,-c(1,2)])
 contrast.PAvS <- merge(contrast.PAvS.treat.all, contrast.PAvS, by=c("CHROM","POS"))
@@ -121,14 +121,14 @@ contrast.PAvS <- contrast.PAvS[order(contrast.PAvS[,1], contrast.PAvS[,2]), ] #s
 
 ## Look at PA-only, E-only, and S-only time-point contrast GLM results ##
 # Load S-only results
-contrast.tpt.S.table <- read.table("rudflies_2023_S_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.S.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_S_tpt.table.GLMcontrast.txt", header=TRUE)
 #names(contrast.tpt.S.table) <- c("CHROM","POS","S.af.mean","S.T1vT2","S.T1vT3","S.T1vT4","S.T2vT3","S.T2vT4","S.T3vT4") #label glm results columns
 # Load PA-only results
-contrast.tpt.PA.table <- read.table("rudflies_2023_PA_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.PA.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PA_tpt.table.GLMcontrast.txt", header=TRUE)
 #names(contrast.tpt.PA.table) <- c("CHROM","POS","PA.af.mean","PA.T1vT2","PA.T1vT3","PA.T1vT4","PA.T2vT3","PA.T2vT4","PA.T3vT4") #label glm results columns
-# Merge the two
+
 # Load E-only results
-contrast.tpt.E.table <- read.table("rudflies_2023_E_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_E_tpt.table.GLMcontrast.txt", header=TRUE)
 names(contrast.tpt.E.table) <- c("CHROM","POS","E.af.mean","E.T1vT2","E.T1vT3","E.T1vT4","E.T2vT3","E.T2vT4","E.T3vT4") #label glm results columns
 # Merge them
 contrast.tpt.S_only.PA_only.E_only <- merge(merge(contrast.tpt.S.table, contrast.tpt.PA.table, by=c("CHROM","POS")),contrast.tpt.E.table, by=c("CHROM","POS"))
@@ -139,18 +139,18 @@ contrast.tpt.S_only.PA_only.E_only <- contrast.tpt.S_only.PA_only.E_only[,-c(3,1
 #write.table(contrast.tpt.E.table, file="rudflies_2023_E_tpt.table.GLMcontrast.txt", sep="\t", quote = FALSE, row.names = F)
 
 ## TPT1-only GLM contrasts: PA vs S vs SE vs E - all pairwise ##
-contrast.PAvSvSEvE.table <- read.table("rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
+contrast.PAvSvSEvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvSvSEvE.table) <- c("CHROM","POS","EvPA.T1","EvSE.T1","EvSP.T1","PAvSE.T1","PAvSP.T1","SEvSP.T1") #label glm results columns
 # Save relabeled table for posterity
 # write.table(contrast.PAvSvSEvE.table, file="rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", sep="\t", quote = FALSE, row.names = F)
 
 ## Load PA and E contrasts ##
 # PA vs E, all time-points combined
-contrastout.PAvE.table <- read.table("rudflies_2023_PAvE_treat.all.table.GLMcontrast.txt", header=TRUE)
+contrastout.PAvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.all.table.GLMcontrast.txt", header=TRUE)
 # PA vs E, founders
-contrastout.PAvE.founder.table <- read.table("rudflies_2023_PAvE_treat.table.GLMcontrast.founders.txt", header=TRUE)
+contrastout.PAvE.founder.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.table.GLMcontrast.founders.txt", header=TRUE)
 # PA vs E, at individual time-points
-contrastout.treat.PA.E.table <- read.table("rudflies_2023_PAvE_treat.table.GLMcontrast2.txt", header=TRUE)
+contrastout.treat.PA.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.table.GLMcontrast2.txt", header=TRUE)
 # Combine these three tables
 contrastout.PAvE.table <- merge(contrastout.PAvE.table[,-3], contrastout.PAvE.founder.table[,-3], by=c("CHROM","POS"))
 contrastout.PAvE.table <- merge(contrastout.PAvE.table, contrastout.treat.PA.E.table[,-3], by=c("CHROM","POS"))
@@ -160,13 +160,13 @@ names(contrastout.PAvE.table) <- c("CHROM","POS","PAvE","PAvE.F","PAvE.T1","PAvE
 
 ## Load SE and E contrasts ##
 # S vs E, all time-points combined
-contrastout.SvE.table <- read.table("rudflies_2023_SvE_treat.all.table.GLMcontrast.txt", header=TRUE)[,c(1,2,4)]
+contrastout.SvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_treat.all.table.GLMcontrast.txt", header=TRUE)[,c(1,2,4)]
 # S vs E, at individual time-points
-contrastout.treat.S.E.table <- read.table("rudflies_2023_SvE_treat.GLMcontrast.table.txt", header=TRUE)
+contrastout.treat.S.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_treat.GLMcontrast.table.txt", header=TRUE)
 # Combine these two tables
 contrastout.SvE.table <- merge(contrastout.SvE.table, contrastout.treat.S.E.table, by=c("CHROM","POS"))
 # S and E: "treatment:time-point" interaction
-contrastout.int.S.E.table <- read.table("rudflies_2023_SvE_int.GLMcontrast.table.txt", header=TRUE)
+contrastout.int.S.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_int.GLMcontrast.table.txt", header=TRUE)
 # Add these results
 contrastout.SvE.table <- merge(contrastout.SvE.table, contrastout.int.S.E.table, by=c("CHROM","POS"))
 names(contrastout.SvE.table) <- c("CHROM","POS","SvE","SvE.T1","SvE.T2","SvE.T3","SvE.T4","int.SvE.T1vT2","int.SvE.T1vT3","int.SvE.T1vT4","int.SvE.T2vT3","int.SvE.T2vT4","int.SvE.T3vT4") #label glm results columns
@@ -218,7 +218,7 @@ for(i in 3:x) { #start after loci columns and append logp cols at the end of the
 glm.all.annot <- merge(glm.all, vep, by=c("CHROM","POS"))
 
 ## Load spinosad-resistance candidate gene list
-spino.cand <- read.table("spino.cand.list.txt", header=FALSE)
+spino.cand <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/spino.cand.list.txt", header=FALSE)
 names(spino.cand) <- "Gene"
 
 ## Now merge to find All SNPs in and around candidate genes
@@ -546,7 +546,7 @@ freq_means_annot_nr_EvPA_bg <- freq_means_annot_nr[!freq_means_annot_nr$Uploaded
 ## differences for treatment contrasts of interest.
 
 ## Instead of running full loop, you can just reload the table from a previous run
-freq_means_results <- read.table("rudflies_2023_redo.freq_means_results.txt", header=TRUE)
+freq_means_results <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_redo.freq_means_results.txt", header=TRUE)
 
 ### DON'T RUN CODE BLOCK IF YOU JUST LOADED TABLE FROM PREVIOUS RUN ###
 freq_means_results <- c() #create empty object
@@ -589,7 +589,7 @@ write.table(freq_means_results, file="rudflies_2023_redo.freq_means_results.txt"
 ## differences for treatment contrasts of interest.
 
 ## Instead of running full loop, you can just reload the table from a previous run
-freq_means_results_EvS <- read.table("rudflies_2023_redo.freq_means_results_EvS.txt", header=TRUE)
+freq_means_results_EvS <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_redo.freq_means_results_EvS.txt", header=TRUE)
 
 ### DON'T RUN CODE BLOCK IF YOU JUST LOADED TABLE FROM PREVIOUS RUN ###
 freq_means_results_EvS <- c() #create empty object
@@ -632,7 +632,7 @@ write.table(freq_means_results_EvS, file="rudflies_2023_redo.freq_means_results_
 ## frequency differences for treatment contrasts of interest.
 
 ## Instead of running full loop, you can just reload the table from a previous run
-freq_means_results_EvPA <- read.table("rudflies_2023_redo.freq_means_results_EvPA.txt", header=TRUE)
+freq_means_results_EvPA <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_redo.freq_means_results_EvPA.txt", header=TRUE)
 
 ### DON'T RUN CODE BLOCK IF YOU JUST LOADED TABLE FROM PREVIOUS RUN ###
 freq_means_results_EvPA <- c() #create empty object
@@ -1463,7 +1463,7 @@ freq_means_t1_annot_nr_EvSP_bg <- freq_means_t1_annot_nr[!freq_means_t1_annot_nr
 
 
 ## Instead of running full loop, you can just reload the table from a previous run
-freq_means_t1_results <- read.table("rudflies_2023_redo.freq_means_t1_results.txt", header=TRUE)
+freq_means_t1_results <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_redo.freq_means_t1_results.txt", header=TRUE)
 
 ### DON'T RUN CODE BLOCK IF YOU JUST LOADED TABLE FROM PREVIOUS RUN ###
 freq_means_t1_results <- c()#create empty object
@@ -1506,7 +1506,7 @@ write.table(freq_means_t1_results, file="rudflies_2023_redo.freq_means_t1_result
 ## differences for treatment contrasts of interest.
 
 ## Instead of running full loop, you can just reload the table from a previous run
-freq_means_t1_results_EvSE <- read.table("rudflies_2023_redo.freq_means_t1_results_EvSE.txt", header=TRUE)
+freq_means_t1_results_EvSE <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_redo.freq_means_t1_results_EvSE.txt", header=TRUE)
 
 ### DON'T RUN CODE BLOCK IF YOU JUST LOADED TABLE FROM PREVIOUS RUN ###
 freq_means_t1_results_EvSE <- c()#create empty object
@@ -1551,7 +1551,7 @@ write.table(freq_means_t1_results_EvSE, file="rudflies_2023_redo.freq_means_t1_r
 ## differences for treatment contrasts of interest.
 
 ## Instead of running full loop, you can just reload the table from a previous run
-freq_means_t1_results_EvSP <- read.table("rudflies_2023_redo.freq_means_t1_results_EvSP.txt", header=TRUE)
+freq_means_t1_results_EvSP <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_redo.freq_means_t1_results_EvSP.txt", header=TRUE)
 
 ### DON'T RUN CODE BLOCK IF YOU JUST LOADED TABLE FROM PREVIOUS RUN ###
 freq_means_t1_results_EvSP <- c()#create empty object
@@ -1596,7 +1596,7 @@ write.table(freq_means_t1_results_EvSP, file="rudflies_2023_redo.freq_means_t1_r
 ## differences for treatment contrasts of interest.
 
 ## Instead of running full loop, you can just reload the table from a previous run
-freq_means_t1_results_EvPA <- read.table("rudflies_2023_redo.freq_means_t1_results_EvPA.txt", header=TRUE)
+freq_means_t1_results_EvPA <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_redo.freq_means_t1_results_EvPA.txt", header=TRUE)
 
 ### DON'T RUN CODE BLOCK IF YOU JUST LOADED TABLE FROM PREVIOUS RUN ###
 freq_means_t1_results_EvPA <- c()#create empty object
@@ -3738,9 +3738,9 @@ dev.off()
 
 ### Checking whether the hafpipe frequencies match the dgrp2 founder file frequencies ###
 ## Load mean frequencies of the relevant DGRP2 samples from the DGRP Freeze.2 VCF file
-dgrp2.freq <- read.delim("../../dgrp2_founder_list.frq", header=TRUE, sep = "\t")
+dgrp2.freq <- read.delim("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/dgrp2_founder_list.frq", header=TRUE, sep = "\t")
 ## Load mean frequencies of experimental samples from VCF generated by BCFtools
-vcf.freq <- read.delim("../calling/filtered-all.frq", header=TRUE, sep = "\t")
+vcf.freq <- read.delim("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/filtered-all.frq", header=TRUE, sep = "\t")
 ## Load mean frequencies of experimental sample from frequency table generated by Hafpipe
 haf.freq.means <- cbind(haf.freq[,c(1:2)],rowMeans(haf.freq[,c(3:ncol(haf.freq))]))
 ## Turns out Hafpipe frequencies are generated for the ALT alleles frequencies instead of 

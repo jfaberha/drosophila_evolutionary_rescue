@@ -5,42 +5,42 @@
 ### two general questions; (1) is there enrichment of an a priori list of insecticide  ###
 ### resistance-associated genes in the various lists of outlier genes in our study,    ###
 ### determined through GLM analysis on all SNPs, and (2) is there a pleiotropic cost to###
-### empirically predicted spinosyn adaptation? 										   ###																	   
-###																					   ###
+### empirically predicted spinosyn adaptation?                                         ###
+###                                                                                    ###
 ### The first enrichment question uses two approaches; 1) hypergeometric overlap tests ###
 ### and 2) Wilcoxon Rank Sum analysis. The first approach simply tests whether the a   ###
 ### priori candidate genes are overrepresented in lists of genes containing outlier    ###
 ### SNPs from various GLM contrasts. The second approach is a non-parametric analysis  ###
 ### that tests whether the significance-ranks of these candidate genes are higher than ###
-### random matched sets of genes across the various contrasts. 						   ###
-###																					   ###
+### random matched sets of genes across the various contrasts.                         ###
+###                                                                                    ###
 ### As an add-on, we also wanted to test whether genes containing outlier SNPs in      ###
 ### several groups of spinosad-exposed populations (vs. controls) were enriched in     ###
 ### other contrasts in our experiment, using the same methods. These analyses seek to  ###
 ### answer the question of whether we could detect genomic convergence between flies   ###
 ### that were exposed to spinosad at the start of the experiment (SE.T1 & SP.T4) to    ###
 ### those that were previously adapted to the insecticide (PA).                        ###
-###																					   ###
+###                                                                                    ###
 ### The second cost question uses a variety of approaches as well. We identified lists ###
 ### of putative spinosyn-adaptive loci using either the PAvE or PAvE.T1 contrasts      ###
 ### (mostly the latter), and queried whether allele frequencies in temporal contrasts  ###
 ### (responding to the environment) we changing in the direction of PA-biased or       ###
 ### E-biased allele frequencies. If changing in the PA-biased direction, it would seem ###
 ### spinosyn-adaptive alleles have no detectable environmental costs, and vice versa.  ###
-### We use binomial sign tests and t-tests to look for E-biased changes.			   ###
-###																					   ###
+### We use binomial sign tests and t-tests to look for E-biased changes.               ###
+###                                                                                    ###
 ### Next we attempted to answer this question using hypergeometric overlap tests. Here ###
 ### we asked whether PAvE or PAvE.T1 outlier SNPs are overrepresented within temporal  ###
 ### contrast lists in either the PA-biased or E-biased direction. Because temporal     ###
 ### contrast GLMs failed to detect any substantial evolutionary signal, we used an     ###
 ###  alternate method to define lists based on strictly parallel AF differences across ###
-### all or nearly all cages in a particular treatment/time-point.					   ###
+### all or nearly all cages in a particular treatment/time-point.                      ###
 ##########################################################################################
  
 
 ### In R ###
 #configure r environment
-setwd("/scratch/user/jfaberha/20260902_101357/admera/gp_analysis/rudflies_2023_redo/r")
+setwd("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/enrichment_cost_analysis")
 library(emmeans)
 library(matrixStats)
 #install.packages("~/Downloads/ACER-master", repos=NULL, type="source")
@@ -64,13 +64,13 @@ library(RColorBrewer)
 #################################
 
 ## Variant Effect Predictor (VEP) annotation file with appended FLYCADD scores
-vep <- read.table("filtered-all.annot.vcf.FLYCADD.tsv", header=TRUE) 
+vep <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/filtered-all.annot.vcf.FLYCADD.tsv", header=TRUE) 
 ## More detailed gene information from gff
-snp.gff.overlap <- read.delim("rudflies_2023_hafpipe_loci_genic_overlap_info.bed", sep="\t", header=TRUE)
+snp.gff.overlap <- read.delim("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_hafpipe_loci_genic_overlap_info.bed", sep="\t", header=TRUE)
 ## Sample metadata table
-haf.meta <- read.table("rudflies_2023_meta.tsv", header=TRUE)
+haf.meta <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_meta.tsv", header=TRUE)
 ## Hafpipe imputed allele frequency table
-haf.freq <- read.delim("rudflies_2023_hafpipe.csv", header=TRUE, sep = ",")
+haf.freq <- read.delim("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_hafpipe.csv", header=TRUE, sep = ",")
 
 ## Do a bit of reformatting for the frequency table header
 names(haf.freq) <- gsub("[.]af","",names(haf.freq))
@@ -126,17 +126,17 @@ haf.meta.T1filt <- haf.meta.T1filt[order(haf.meta.T1filt$samp),]
 
 ### Start with PA and S contrasts ###
 ## Load PA vs S, all samples combined
-contrast.PAvS.treat.all <- read.table("rudflies_2023_PAvS_treat.all.table.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.treat.all <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_treat.all.table.GLMcontrast.txt", header=TRUE)
 contrast.PAvS.treat.all <- contrast.PAvS.treat.all[,-3] #remove AF mean column
 names(contrast.PAvS.treat.all)[3] <- "PAvS" #label glm results column
 ## Load PA vs S for each timepoint
-contrast.PAvS.treat <- read.table("rudflies_2023_PAvS_treat.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.treat <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_treat.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.treat) <- c("CHROM","POS","PAvS.T1","PAvS.T2","PAvS.T3","PAvS.T4")
 ## Load timepoint contrasts using PA and S combined
-contrast.PAvS.tpt <- read.table("rudflies_2023_PAvS_tpt.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.tpt <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_tpt.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.tpt) <- c("CHROM","POS","PA.S.T1vT2","PA.S.T1.T3","PA.S.T1vT4","PA.S.T2vT3","PA.S.T2vT4","PA.S.T3vT4") #label glm results columns
 ## Load PA and S "timepoint:treatment" interaction
-contrast.PAvS.int <- read.table("rudflies_2023_PAvS_int.GLMcontrast.txt", header=TRUE)
+contrast.PAvS.int <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvS_int.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvS.int) <- c("CHROM","POS","int.PAvS.T1vT2","int.PAvS.T1vT3","int.PAvS.T1vT4","int.PAvS.T2vT3","int.PAvS.T2vT4","int.PAvS.T3vT4") #label glm results columns
 contrast.PAvS <- cbind(contrast.PAvS.treat, contrast.PAvS.tpt[,-c(1,2)], contrast.PAvS.int[,-c(1,2)])
 contrast.PAvS <- merge(contrast.PAvS.treat.all, contrast.PAvS, by=c("CHROM","POS"))
@@ -146,14 +146,13 @@ contrast.PAvS <- contrast.PAvS[order(contrast.PAvS[,1], contrast.PAvS[,2]), ] #s
 
 ## Look at PA-only, E-only, and S-only time-point contrast GLM results ##
 # Load S-only results
-contrast.tpt.S.table <- read.table("rudflies_2023_S_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.S.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_S_tpt.table.GLMcontrast.txt", header=TRUE)
 #names(contrast.tpt.S.table) <- c("CHROM","POS","S.af.mean","S.T1vT2","S.T1vT3","S.T1vT4","S.T2vT3","S.T2vT4","S.T3vT4") #label glm results columns
 # Load PA-only results
-contrast.tpt.PA.table <- read.table("rudflies_2023_PA_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.PA.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PA_tpt.table.GLMcontrast.txt", header=TRUE)
 #names(contrast.tpt.PA.table) <- c("CHROM","POS","PA.af.mean","PA.T1vT2","PA.T1vT3","PA.T1vT4","PA.T2vT3","PA.T2vT4","PA.T3vT4") #label glm results columns
-# Merge the two
 # Load E-only results
-contrast.tpt.E.table <- read.table("rudflies_2023_E_tpt.table.GLMcontrast.txt", header=TRUE)
+contrast.tpt.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_E_tpt.table.GLMcontrast.txt", header=TRUE)
 names(contrast.tpt.E.table) <- c("CHROM","POS","E.af.mean","E.T1vT2","E.T1vT3","E.T1vT4","E.T2vT3","E.T2vT4","E.T3vT4") #label glm results columns
 # Merge them
 contrast.tpt.S_only.PA_only.E_only <- merge(merge(contrast.tpt.S.table, contrast.tpt.PA.table, by=c("CHROM","POS")),contrast.tpt.E.table, by=c("CHROM","POS"))
@@ -164,18 +163,18 @@ contrast.tpt.S_only.PA_only.E_only <- contrast.tpt.S_only.PA_only.E_only[,-c(3,1
 #write.table(contrast.tpt.E.table, file="rudflies_2023_E_tpt.table.GLMcontrast.txt", sep="\t", quote = FALSE, row.names = F)
 
 ## TPT1-only GLM contrasts: PA vs S vs SE vs E - all pairwise ##
-contrast.PAvSvSEvE.table <- read.table("rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
+contrast.PAvSvSEvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", header=TRUE)
 #names(contrast.PAvSvSEvE.table) <- c("CHROM","POS","EvPA.T1","EvSE.T1","EvSP.T1","PAvSE.T1","PAvSP.T1","SEvSP.T1") #label glm results columns
 # Save relabeled table for posterity
 # write.table(contrast.PAvSvSEvE.table, file="rudflies_2023_PAvSvSEvE.wLoci.GLMcontrast.txt", sep="\t", quote = FALSE, row.names = F)
 
 ## Load PA and E contrasts ##
 # PA vs E, all time-points combined
-contrastout.PAvE.table <- read.table("rudflies_2023_PAvE_treat.all.table.GLMcontrast.txt", header=TRUE)
+contrastout.PAvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.all.table.GLMcontrast.txt", header=TRUE)
 # PA vs E, founders
-contrastout.PAvE.founder.table <- read.table("rudflies_2023_PAvE_treat.table.GLMcontrast.founders.txt", header=TRUE)
+contrastout.PAvE.founder.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.table.GLMcontrast.founders.txt", header=TRUE)
 # PA vs E, at individual time-points
-contrastout.treat.PA.E.table <- read.table("rudflies_2023_PAvE_treat.table.GLMcontrast2.txt", header=TRUE)
+contrastout.treat.PA.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_PAvE_treat.table.GLMcontrast2.txt", header=TRUE)
 # Combine these three tables
 contrastout.PAvE.table <- merge(contrastout.PAvE.table[,-3], contrastout.PAvE.founder.table[,-3], by=c("CHROM","POS"))
 contrastout.PAvE.table <- merge(contrastout.PAvE.table, contrastout.treat.PA.E.table[,-3], by=c("CHROM","POS"))
@@ -185,13 +184,13 @@ names(contrastout.PAvE.table) <- c("CHROM","POS","PAvE","PAvE.F","PAvE.T1","PAvE
 
 ## Load SE and E contrasts ##
 # S vs E, all time-points combined
-contrastout.SvE.table <- read.table("rudflies_2023_SvE_treat.all.table.GLMcontrast.txt", header=TRUE)[,c(1,2,4)]
+contrastout.SvE.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_treat.all.table.GLMcontrast.txt", header=TRUE)[,c(1,2,4)]
 # S vs E, at individual time-points
-contrastout.treat.S.E.table <- read.table("rudflies_2023_SvE_treat.GLMcontrast.table.txt", header=TRUE)
+contrastout.treat.S.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_treat.GLMcontrast.table.txt", header=TRUE)
 # Combine these two tables
 contrastout.SvE.table <- merge(contrastout.SvE.table, contrastout.treat.S.E.table, by=c("CHROM","POS"))
 # S and E: "treatment:time-point" interaction
-contrastout.int.S.E.table <- read.table("rudflies_2023_SvE_int.GLMcontrast.table.txt", header=TRUE)
+contrastout.int.S.E.table <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/rudflies_2023_SvE_int.GLMcontrast.table.txt", header=TRUE)
 # Add these results
 contrastout.SvE.table <- merge(contrastout.SvE.table, contrastout.int.S.E.table, by=c("CHROM","POS"))
 names(contrastout.SvE.table) <- c("CHROM","POS","SvE","SvE.T1","SvE.T2","SvE.T3","SvE.T4","int.SvE.T1vT2","int.SvE.T1vT3","int.SvE.T1vT4","int.SvE.T2vT3","int.SvE.T2vT4","int.SvE.T3vT4") #label glm results columns
@@ -446,7 +445,7 @@ glm.all.rolwin21.logp <- cbind(glm.all.rolwin21.pval[,c(1:2)],select(glm.all.rol
 glm.all.rolwin21.fdr <- cbind(glm.all.rolwin21.pval[,c(1:2)],select(glm.all.rolwin21,contains("fdr")))
 
 ## Load spinosad-resistance candidate gene list
-spino.cand <- read.table("spino.cand.list.txt", header=FALSE)
+spino.cand <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/spino.cand.list.txt", header=FALSE)
 names(spino.cand) <- "Gene"
 
 ## Now merge to find All SNPs in and around candidate genes
@@ -1001,9 +1000,6 @@ cbind(contrast=names(wilcox.rolwin21.p),perc_sig=wilcox.rolwin21.contrast)
 write.table(cbind(contrast=names(wilcox.rolwin21.p),perc_sig=wilcox.rolwin21.contrast), file="rudflies_2023_redo.glm.all.wilcox.rolwin21.p.percsig.txt", quote = FALSE, sep = "\t", row.names = F)
 
 
-
-
-
 ##############################################
 ###   Use EvSE.T1 candidates as test set   ###
 ##############################################
@@ -1104,7 +1100,6 @@ glm.all.fdr.rolwin21.annot.EvSE.T1.missense.min <- cbind(Gene=temp.min %>%
 
 ## Save minimum FDR results from missense SNPs for downstream use
 write.table(glm.all.fdr.rolwin21.annot.EvSE.T1.missense.min, file="rudflies_2023_redo.glm.all.rolwin21.minfdr.EvSE.T1.missense.txt", quote = FALSE, sep = "\t", row.names = F)
-
 
 
 ## Now we've found minimum FDR values for candidate gene and background gene lists, 
@@ -1762,7 +1757,6 @@ glm.all.pval.rolwin21.annot.EvSP.T4.missense.min <- cbind(Gene=temp.min %>%
 write.table(glm.all.pval.rolwin21.annot.EvSP.T4.missense.min, file="rudflies_2023_redo.glm.all.rolwin21.minpval.EvSP.T4.missense.txt", quote = FALSE, sep = "\t", row.names = F)
         	
 
-
 ## Time to run the Wicoxon Rank Sum analyses. To do so, we will select one matched 
 ## background gene for every EvSP.T4 candidate gene. This matched set selection is 
 ## based on the following criteria:
@@ -1930,6 +1924,7 @@ write.table(pval_corr_table, file="rudflies_2023_redo.spinosyn_vs_temporal_pval_
 ## We'll use these values to assign positive or negative signs to -log10p values
 ## The downstream values will reflect both the magnitude and direction of AF change
 freq_diff_conv <- cbind(haf.sites.filt[,c(1:2)], #locus info
+	EvSP.T4.diff=rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="S" & haf.meta.filt$tpt=="4"]) - rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="E" & haf.meta.filt$tpt=="4"]), #EvSP.T4
 	PAvE.T1.diff=rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="PA" & haf.meta.filt$tpt=="1"]) - rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="E" & haf.meta.filt$tpt=="1"]), #PAvE.T1
 	PAvE.diff=rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="PA"]) - rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="E"]), #PAvE
 	PA.T1vT2.diff=rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="PA" & haf.meta.filt$tpt=="2"]) - rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="PA" & haf.meta.filt$tpt=="1"]), #PA.T1vT2
@@ -1945,11 +1940,22 @@ freq_diff_conv <- cbind(haf.sites.filt[,c(1:2)], #locus info
 	E.T2vT4.diff=rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="E" & haf.meta.filt$tpt=="4"]) - rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="E" & haf.meta.filt$tpt=="2"]), #E.T1vT2
 	E.T3vT4.diff=rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="E" & haf.meta.filt$tpt=="4"]) - rowMeans(haf.freq.filt[,haf.meta.filt$treat.fix=="E" & haf.meta.filt$tpt=="3"])) #E.T1vT2
 
+## "Unexposed vs. Extinct" and "Unexposed vs. Rescued" at T1
+freq_diff_conv_T1filt <- cbind(haf.sites.T1filt[,c(1:2)], #locus info
+	EvSE.T1.diff=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="SE" & haf.meta.T1filt$tpt=="1"]) - rowMeans(haf.freq.T1filt[,haf.meta.T1filt$treat.fix=="E" & haf.meta.T1filt$tpt=="1"]), #EvSE.T1
+	EvSP.T1.diff=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="SP" & haf.meta.T1filt$tpt=="1"]) - rowMeans(haf.freq.T1filt[,haf.meta.T1filt$treat.fix=="E" & haf.meta.T1filt$tpt=="1"])) #EvSP.T1
+	
+## Merge "Unexposed vs. Exposed" results
+freq_diff_conv <- merge(freq_diff_conv_T1filt, freq_diff_conv, by=c("CHROM","POS"))
+
 ## Convert all frequency differences to +1/-1 to reflect positive or negative AF diff
 freq_diff_sign <- cbind(freq_diff_conv[,c(1:2)],freq_diff_conv[,c(3:ncol(freq_diff_conv))]/abs(freq_diff_conv[,c(3:ncol(freq_diff_conv))]))
 
 ## Join PAvE and temporal GLM results (-log10p) with new freq_diff_sign table
 freq_diff_sign_temp <- merge(freq_diff_sign, cbind(glm.all[,c(1,2)], 
+	EvSE.T1.logp=glm.all$EvSE.T1.logp, 
+	EvSP.T1.logp=glm.all$EvSP.T1.logp,
+	EvSP.T4.logp=glm.all$SvE.T4.logp,
 	PAvE.T1.logp=glm.all$PAvE.T1.logp, 
 	PAvE.logp=glm.all$PAvE.logp, 
 	PA.T1vT2.logp=glm.all$PA.T1vT2.logp, 
@@ -1971,16 +1977,24 @@ freq_diff_sign_temp <- merge(freq_diff_sign, cbind(glm.all[,c(1,2)],
 freq_diff_sign_logp <- freq_diff_sign_temp[,c(1,2)]
 
 ## Conduct sign-correction through multiplication
-for(i in c(3:16)) { #start after loci columns and append FDR cols at the end of the table
-  freq_diff_sign_logp <- cbind(freq_diff_sign_logp, freq_diff_sign_temp[,i] * freq_diff_sign_temp[,i+14])
-  colnames(freq_diff_sign_logp)[i] <- paste(names(freq_diff_sign_temp)[i+14], ".sign", sep="")
+for(i in c(3:19)) { #start after loci columns and append FDR cols at the end of the table
+  freq_diff_sign_logp <- cbind(freq_diff_sign_logp, freq_diff_sign_temp[,i] * freq_diff_sign_temp[,i+17])
+  colnames(freq_diff_sign_logp)[i] <- paste(names(freq_diff_sign_temp)[i+17], ".sign", sep="")
 }
-
-## Sort by locus
-freq_diff_sign_logp <- freq_diff_sign_logp[order(freq_diff_sign_logp[,1], freq_diff_sign_logp[,2]), ]
 
 ## Now calculate AF means across treatments for additional filtering of table
 haf.freq.T1filt.af_mean <- cbind(haf.sites.T1filt,af_mean=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$treat.fix=="E" | haf.meta.T1filt$treat.fix=="S" | haf.meta.T1filt$treat.fix=="PA"]))
+
+## Merge new means with AF diff sign table
+freq_diff_sign <- merge(freq_diff_sign, haf.freq.T1filt.af_mean, by=c("CHROM","POS"))
+
+## Sort by locus
+freq_diff_sign <- freq_diff_sign[order(freq_diff_sign[,1], freq_diff_sign[,2]), ]
+
+## Filter if AF means are less than 0.15 or greater than 0.85.
+## This preserves ranking patterns for biologically relevant loci while removing those 
+## that appear to have major treatment differences due to REF or ALT alleles being rare.
+freq_diff_sign <- freq_diff_sign[freq_diff_sign$af_mean>0.15 & freq_diff_sign$af_mean<0.85,]
 
 ## Merge new means with GLM/freq_diff table
 freq_diff_sign_logp <- merge(freq_diff_sign_logp, haf.freq.T1filt.af_mean, by=c("CHROM","POS"))
@@ -1990,18 +2004,26 @@ freq_diff_sign_logp <- merge(freq_diff_sign_logp, haf.freq.T1filt.af_mean, by=c(
 ## that appear to have major treatment differences due to REF or ALT alleles being rare.
 freq_diff_sign_logp <- freq_diff_sign_logp[freq_diff_sign_logp$af_mean>0.15 & freq_diff_sign_logp$af_mean<0.85,]
 
+## Sort by locus
+freq_diff_sign_logp <- freq_diff_sign_logp[order(freq_diff_sign_logp[,1], freq_diff_sign_logp[,2]), ]
 
-### Directional stacked bar plots for top 10K PAvE.T1 SNPs, ranked by GLM FDR ###
 
-## First, find top 10K SNPs
-PAvE.T1.10K <- head(unique(glm.all[order(glm.all$PAvE.T1.fdr),]),10000)
+###########################################################################
+### AF directional analysis for top 10K PAvE.T1 SNPs, ranked by GLM FDR ###
+###########################################################################
+
+## Find sites represented in AF diff table so we merge without losing too many SNPs
+glm.temp <- glm.all[which(glm.all$POS %in% freq_diff_sign$POS==TRUE),]
+
+## Find top 10K SNPs
+PAvE.T1.10K <- head(unique(glm.temp[order(glm.temp$PAvE.T1.fdr),]),10000)
 
 ## Merge to retrieve sign info
-freq_diff_sign_PAvE_T1_top10K <- merge(PAvE.T1.10K[,c(1:2)], freq_diff_sign, by=c("CHROM","POS"))
+freq_diff_sign_PAvE_T1_top10K <- merge(PAvE.T1.10K[,c(1:2)], freq_diff_sign[,-20], by=c("CHROM","POS"))
 
 ## Here we recalibrate sign-correction factor for all temporal comparison to match 
 ## direction of PAvE.T1 contrast for easier comparison
-freq_diff_sign_PAvE_T1_top10K_rel <- freq_diff_sign_PAvE_T1_top10K[,c(5:ncol(freq_diff_sign_PAvE_T1_top10K))] * freq_diff_sign_PAvE_T1_top10K[,3]
+freq_diff_sign_PAvE_T1_top10K_rel <- freq_diff_sign_PAvE_T1_top10K[,c(8:ncol(freq_diff_sign_PAvE_T1_top10K))] * freq_diff_sign_PAvE_T1_top10K[,6]
 
 ## Get counts of positive (PA-biased) & negative (E-biased) AF directions per contrast
 freq_diff_sign_counts_PAvE_T1_top10K_rel <- lapply(freq_diff_sign_PAvE_T1_top10K_rel, table)
@@ -2052,16 +2074,13 @@ freq_diff_sign_counts_PAvE_T1_top10K_rel_T2vT4_bar <-	ggplot(freq_diff_sign_coun
 ### Statistical test associated with these stacked barplots would be binomial sign test
 ## This will test if there are more E-biased AF differences than expected than 50/50
 
-## list contrasts to test
-temporal_contrast <- c("PA.T1vT2","PA.T1vT3","PA.T1vT4","PA.T2vT3","PA.T2vT4","PA.T3vT4","E.T1vT2","E.T1vT3","E.T1vT4","E.T2vT3","E.T2vT4","E.T3vT4")
-
 ## Initialize results table
 binom_res_10kSNP_PAvE.T1 <- c()
 
 ## loop through all contrasts
 for (contrast in temporal_contrast) { #cycle through all contrasts
 	Ebias <- freq_diff_sign_counts_PAvE_T1_top10K_rel[freq_diff_sign_counts_PAvE_T1_top10K_rel$PAvE.T1_contrast=="E-biased" & freq_diff_sign_counts_PAvE_T1_top10K_rel$contrast==contrast,]$Freq #save E-biased counts
-	PAbias <- freq_diff_sign_counts_PAvE_T1_top10K_rel[freq_diff_sign_counts_PAvE_T1_top10K_rel$PAvE.T1_contrast=="PA-biased" & freq_diff_sign_counts_PAvE_T1_top10K_rel$contrast==contrast,]$Freq #save PA-biased counts
+	PAbias <- 10000 - freq_diff_sign_counts_PAvE_T1_top10K_rel[freq_diff_sign_counts_PAvE_T1_top10K_rel$PAvE.T1_contrast=="E-biased" & freq_diff_sign_counts_PAvE_T1_top10K_rel$contrast==contrast,]$Freq #save PA-biased counts
 	##Run binomial test
 	binom_res_10kSNP_PAvE.T1 <- rbind(binom_res_10kSNP_PAvE.T1,cbind(contrast,(data.frame(t(binom.test(x = Ebias, n = Ebias + PAbias, p = 0.5, alternative = "greater")[c(1,3,5)])))))
 }
@@ -2074,7 +2093,7 @@ fwrite(data.frame(binom_res_10kSNP_PAvE.T1), file="rudflies_2023_redo.binom_res_
 
 ## Here we recalibrate sign-correction factor for all temporal comparison to match 
 ## direction of PAvE.T1 contrast for easier comparison
-freq_diff_sign_rel <- freq_diff_sign[,c(5:ncol(freq_diff_sign))] * freq_diff_sign[,3]
+freq_diff_sign_rel <- freq_diff_sign[,c(8:19)] * freq_diff_sign[,6]
 
 ## Get counts of positive (PA-biased) & negative (E-biased) AF directions per contrast
 freq_diff_sign_counts_rel <- lapply(freq_diff_sign_rel, table)
@@ -2143,8 +2162,8 @@ binom_res_allSNP_PAvE.T1 <- c()
 
 ## loop through all contrasts
 for (contrast in temporal_contrast) { #cycle through all contrasts
-	Ebias <- freq_diff_sign_counts_PAvE_T1_top10K_rel[freq_diff_sign_counts_PAvE_T1_top10K_rel$PAvE.T1_contrast=="E-biased" & freq_diff_sign_counts_PAvE_T1_top10K_rel$contrast==contrast,]$Freq #save E-biased counts
-	PAbias <- freq_diff_sign_counts_PAvE_T1_top10K_rel[freq_diff_sign_counts_PAvE_T1_top10K_rel$PAvE.T1_contrast=="PA-biased" & freq_diff_sign_counts_PAvE_T1_top10K_rel$contrast==contrast,]$Freq #save PA-biased counts
+	Ebias <- freq_diff_sign_counts_rel[freq_diff_sign_counts_rel$PAvE.T1_contrast=="E-biased" & freq_diff_sign_counts_rel$contrast==contrast,]$Freq #save E-biased counts
+	PAbias <- freq_diff_sign_counts_rel[freq_diff_sign_counts_rel$PAvE.T1_contrast=="PA-biased" & freq_diff_sign_counts_rel$contrast==contrast,]$Freq #save PA-biased counts
 	##Run binomial test
 	binom_res_allSNP_PAvE.T1 <- rbind(binom_res_allSNP_PAvE.T1,cbind(contrast,(data.frame(t(binom.test(x = Ebias, n = Ebias + PAbias, p = 0.5, alternative = "greater")[c(1,3,5)])))))
 }
@@ -2155,21 +2174,23 @@ fwrite(data.frame(binom_res_allSNP_PAvE.T1), file ="rudflies_2023_redo.binom_res
 
 ### Directional histograms for top 10k PAvE.T1 SNPs ###
 
+## Merge to retrieve sign-corrected logp values
 #PAvE.T1.10K <- head(unique(glm.all[order(glm.all$PAvE.T1.fdr),]),10000)
-freq_diff_sign_logp_PAvE_T1_top10K <- merge(PAvE.T1.10K[,c(1:2)], freq_diff_sign_logp, by=c("CHROM","POS"))
+freq_diff_sign_logp_PAvE_T1_top10K <- merge(PAvE.T1.10K[,c(1:2)], freq_diff_sign_logp[,-20], by=c("CHROM","POS"))
 
 ## Loop over temporal contrasts to make histograms of top 10k sign-corrected -log10p vals
-for (x in c(5:16)) { #cycle through all contrasts
-	templist <- freq_diff_sign_logp_PAvE_T1_top10K[,c(1,2,x)]
+for (x in c(8:19)) { #cycle through all contrasts
+	## Pull temporal contrast and calibrate sign to align with the PAvE.T1 contrast
+	templist <- cbind(freq_diff_sign_logp_PAvE_T1_top10K[,c(1,2)], 
+		(freq_diff_sign_logp_PAvE_T1_top10K[,x] * (abs(freq_diff_sign_logp_PAvE_T1_top10K[,6])/freq_diff_sign_logp_PAvE_T1_top10K[,6]))) 
 	names(templist)[3] <- "value"
-	assign(paste("PAvE.T1_vs_",temporal_contrast[x-4],"_signed_hist_top10K",sep=""), 
+	assign(paste("PAvE.T1_vs_",temporal_contrast[x-7],"_signed_hist_top10K",sep=""), 
 		ggplot(templist, 
 	  		aes(value)) + 
 	  		geom_histogram(bins = 100) +
-	  		xlab(paste(temporal_contrast[x-4]," p-values",sep="")) +
+	  		xlab(paste(temporal_contrast[x-7]," p-values",sep="")) +
 	  		theme_classic())
 }
-
 
 ### Plot all p-value correlations to check for cost of adaptation
 pdf(file = "rudflies_2023_redo.PAvE.T1_vs_temporal.signed_logp.hist_top10K.pdf", width=8, height=10)
@@ -2191,35 +2212,191 @@ dev.off()
 
 ## Run t-tests to see if mean differences are negative (E-biased) for all contrasts
 ## Specifically, we will test if the mean of the focal sets is less than 0
-ttest_res_10kSNP <- c()
-for (x in c(5:16)) { #cycle through all contrasts
-	contrast <- temporal_contrast[x-4]
-	templist <- freq_diff_sign_logp_PAvE_T1_top10K[,c(1,2,x)]
+ttest_res_10KPAvE_T1 <- c()
+for (x in c(8:19)) { #cycle through all contrasts
+	contrast <- temporal_contrast[x-7]
+	## Pull temporal contrast and calibrate sign to align with the PAvE.T1 contrast
+	templist <- cbind(freq_diff_sign_logp_PAvE_T1_top10K[,c(1,2)], 
+		(freq_diff_sign_logp_PAvE_T1_top10K[,x] * (abs(freq_diff_sign_logp_PAvE_T1_top10K[,6])/freq_diff_sign_logp_PAvE_T1_top10K[,6]))) 
 	names(templist)[3] <- "value"
-	ttest_res_10kSNP <- rbind(ttest_res_10kSNP, cbind(contrast, t(t.test(templist$value, mu = 0, alternative = "less")[c(1,3,5)])))
+	ttest_res_10KPAvE_T1 <- rbind(ttest_res_10KPAvE_T1, cbind(contrast, t(t.test(templist$value, mu = 0, alternative = "less")[c(1,3,5)])))
 }
 
 ## Save
 write.table(ttest_res_10KPAvE_T1, file="rudflies_2023_redo.ttest_res_10KPAvE_T1.txt", sep = "\t", quote = FALSE, row.names = F)
 
 
-### Directional histograms for top 1k PAvE.T1 SNPs ###
+## Run t-tests to see if mean differences are more negative (E-biased) than matched sets 
+## for all contrasts. 
 
+## Matched set selection is more robust than checking for significantly negative values, 
+## since many loci across the genome, unrelated to spinosyn adaption, may be experiencing  
+## negative directional selection in response to outdoor adaption. 
+
+## Find sign-corrected -log10(p) values for top 10k PAvE.T1 SNPs
+freq_diff_sign_logp_PAvE_T1_top10K_vep_sig <- merge(freq_diff_sign_logp_PAvE_T1_top10K, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values all SNPs
+freq_diff_sign_logp_PAvE_T1_top10K_vep <- merge(freq_diff_sign_logp, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values for non-top 10k PAvE.T1 SNPs
+freq_diff_sign_logp_PAvE_T1_top10K_vep_nonsig <- anti_join(freq_diff_sign_logp_PAvE_T1_top10K_vep, freq_diff_sign_logp_PAvE_T1_top10K_vep_sig, by = c("CHROM","POS"))
+
+## Prior to running t-tests, determine how many matches so we can exclude those with <5
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(freq_diff_sign_logp_PAvE_T1_top10K_vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[j,]$Consequence
+	chrom <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[j,]$CHROM
+	found <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[j,]$E
+	pos <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(freq_diff_sign_logp_PAvE_T1_top10K_vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+## Initialize results tables
+ttest_res_PAvE_T1_10kSNPs_vs_match_cost <- c()
+ttest_res_PAvE_T1_10kSNPs_vs_match_benefit <- c()
+
+## Run t-tests for all temporal contrast sign-corrected -log10(p) values
+## This run 100 iterations of focal and matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[bg.samp.counts[,1]>4,]))) {
+		#Select matched lists based on following criteria
+		type <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[j,]$Consequence
+		chrom <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[j,]$CHROM
+		found <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[j,]$E
+		pos <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(freq_diff_sign_logp_PAvE_T1_top10K_vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	for(i in c(8:19)) { #cycle through all temporal contrasts 		
+  		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		focal.afdiff <- freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[,i] * (abs(freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[,6])/freq_diff_sign_logp_PAvE_T1_top10K_vep_sig[,6])
+		bg.afdiff <- bg.samp.list[,i] * (abs(bg.samp.list[,6])/bg.samp.list[,6])
+
+		# Run the t-test - set to "less" for test for selective cost over time
+		ttest_res_PAvE_T1_10kSNPs_vs_match_cost <- rbind(ttest_res_PAvE_T1_10kSNPs_vs_match_cost,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "less")[c(1,2,3,7)])))
+		
+		# Run the t-test - set to "greater" for test for selective benefit over time
+		ttest_res_PAvE_T1_10kSNPs_vs_match_benefit <- rbind(ttest_res_PAvE_T1_10kSNPs_vs_match_benefit,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)])))
+	}
+}
+
+## Save tables
+write.table(ttest_res_PAvE_T1_10kSNPs_vs_match_cost, file="rudflies_2023_redo.ttest_res_PAvE_T1_10kSNPs_vs_match_cost.txt", sep = "\t", quote = FALSE, row.names = F) #cost table
+write.table(ttest_res_PAvE_T1_10kSNPs_vs_match_benefit, file="rudflies_2023_redo.ttest_res_PAvE_T1_10kSNPs_vs_match_benefit.txt", sep = "\t", quote = FALSE, row.names = F) #benefit
+
+##########################################################################
+### AF directional analysis for top 1K PAvE.T1 SNPs, ranked by GLM FDR ###
+##########################################################################
+
+## First, find top 1K SNPs
+PAvE.T1.1K <- head(unique(glm.temp[order(glm.temp$PAvE.T1.fdr),]),1000)
+
+## Merge to retrieve sign info
+freq_diff_sign_PAvE_T1_top1K <- merge(PAvE.T1.1K[,c(1:2)], freq_diff_sign[,-20], by=c("CHROM","POS"))
+
+## Here we recalibrate sign-correction factor for all temporal comparison to match 
+## direction of PAvE.T1 contrast for easier comparison
+freq_diff_sign_PAvE_T1_top1K_rel <- freq_diff_sign_PAvE_T1_top1K[,c(8:ncol(freq_diff_sign_PAvE_T1_top1K))] * freq_diff_sign_PAvE_T1_top1K[,6]
+
+## Get counts of positive (PA-biased) & negative (E-biased) AF directions per contrast
+freq_diff_sign_counts_PAvE_T1_top1K_rel <- lapply(freq_diff_sign_PAvE_T1_top1K_rel, table)
+
+## Make data frame
+freq_diff_sign_counts_PAvE_T1_top1K_rel <- do.call(rbind, lapply(freq_diff_sign_counts_PAvE_T1_top1K_rel, as.data.frame))
+
+## Make contrast field to keep track and filter
+freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast <- row.names(freq_diff_sign_counts_PAvE_T1_top1K_rel)
+
+## Remove number suffixes so like-contrasts can be plotted together
+freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast <- 
+gsub(".diff.1","",freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast)
+freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast <- 
+gsub(".diff.2","",freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast)
+freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast <- 
+gsub(".diff","",freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast)
+
+##Give Var1 field informative values and header
+freq_diff_sign_counts_PAvE_T1_top1K_rel$Var1 <- gsub("-1","E-biased",freq_diff_sign_counts_PAvE_T1_top1K_rel$Var1)
+freq_diff_sign_counts_PAvE_T1_top1K_rel$Var1 <- gsub("1","PA-biased",freq_diff_sign_counts_PAvE_T1_top1K_rel$Var1)
+names(freq_diff_sign_counts_PAvE_T1_top1K_rel)[1] <- "PAvE.T1_contrast"
+
+
+### Plot all p-value correlations to check for cost of adaptation
+pdf(file = "rudflies_2023_redo.PAvE.T1_vs_temporal.signed.stackbarplot_top1K.pdf", width=12, height=4)
+	ggplot(freq_diff_sign_counts_PAvE_T1_top1K_rel) +
+  		geom_bar(aes(x = contrast, y = Freq, fill = PAvE.T1_contrast), 
+           position = "stack", stat = "identity") +
+      	geom_hline(yintercept=500,color="black",linetype="dashed",linewidth=.25) +
+      	ggtitle("Direction of temporal AF change for top 1K outlier SNPs in PAvE.T1 contrast") +
+      	theme_classic()    
+dev.off()
+
+## Save plot as object for multi-panel plot
+freq_diff_sign_counts_PAvE_T1_top1K_rel_bar <-	ggplot(freq_diff_sign_counts_PAvE_T1_top1K_rel) +
+  		geom_bar(aes(x = contrast, y = Freq, fill = PAvE.T1_contrast), 
+           position = "stack", stat = "identity") +
+      	geom_hline(yintercept=500,color="black",linetype="dashed",linewidth=.25) +
+      	ggtitle("Direction of temporal AF change for top 1K outlier SNPs in PAvE.T1 contrast") +
+      	theme_classic()  
+      	
+
+### Statistical test associated with these stacked barplots would be binomial sign test
+## This will test if there are more E-biased AF differences than expected than 50/50
+
+## Initialize results table
+binom_res_1KSNP_PAvE.T1 <- c()
+
+## loop through all contrasts
+for (contrast in temporal_contrast) { #cycle through all contrasts
+	Ebias <- freq_diff_sign_counts_PAvE_T1_top1K_rel[freq_diff_sign_counts_PAvE_T1_top1K_rel$PAvE.T1_contrast=="E-biased" & freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast==contrast,]$Freq #save E-biased counts
+	PAbias <- 1000 - freq_diff_sign_counts_PAvE_T1_top1K_rel[freq_diff_sign_counts_PAvE_T1_top1K_rel$PAvE.T1_contrast=="E-biased" & freq_diff_sign_counts_PAvE_T1_top1K_rel$contrast==contrast,]$Freq #save PA-biased counts
+	##Run binomial test
+	binom_res_1KSNP_PAvE.T1 <- rbind(binom_res_1KSNP_PAvE.T1,cbind(contrast,(data.frame(t(binom.test(x = Ebias, n = Ebias + PAbias, p = 0.5, alternative = "greater")[c(1,3,5)])))))
+}
+
+## Save table
+fwrite(data.frame(binom_res_1KSNP_PAvE.T1), file="rudflies_2023_redo.binom_res_1KSNP_PAvE.T1.txt")
+
+
+### Directional histograms for top 1K PAvE.T1 SNPs ###
+
+## Merge to retrieve sign-corrected logp values
 #PAvE.T1.1K <- head(unique(glm.all[order(glm.all$PAvE.T1.fdr),]),10000)
-freq_diff_sign_logp_PAvE_T1_top1K <- merge(PAvE.T1.1K[,c(1:2)], freq_diff_sign_logp, by=c("CHROM","POS"))
+freq_diff_sign_logp_PAvE_T1_top1K <- merge(PAvE.T1.1K[,c(1:2)], freq_diff_sign_logp[,-20], by=c("CHROM","POS"))
 
-## Loop over temporal contrasts to make histograms of top 1k sign-corrected -log10p vals
-for (x in c(5:16)) { #cycle through all contrasts
-	templist <- freq_diff_sign_logp_PAvE_T1_top1K[,c(1,2,x)]
+## Loop over temporal contrasts to make histograms of top 1K sign-corrected -log10p vals
+for (x in c(8:19)) { #cycle through all contrasts
+	## Pull temporal contrast and calibrate sign to align with the PAvE.T1 contrast
+	templist <- cbind(freq_diff_sign_logp_PAvE_T1_top1K[,c(1,2)], 
+		(freq_diff_sign_logp_PAvE_T1_top1K[,x] * (abs(freq_diff_sign_logp_PAvE_T1_top1K[,6])/freq_diff_sign_logp_PAvE_T1_top1K[,6]))) 
 	names(templist)[3] <- "value"
-	assign(paste("PAvE.T1_vs_",temporal_contrast[x-4],"_signed_hist_top1K",sep=""), 
+	assign(paste("PAvE.T1_vs_",temporal_contrast[x-7],"_signed_hist_top1K",sep=""), 
 		ggplot(templist, 
 	  		aes(value)) + 
 	  		geom_histogram(bins = 100) +
-	  		xlab(paste(temporal_contrast[x-4]," p-values",sep="")) +
+	  		xlab(paste(temporal_contrast[x-7]," p-values",sep="")) +
 	  		theme_classic())
 }
-
 
 ### Plot all p-value correlations to check for cost of adaptation
 pdf(file = "rudflies_2023_redo.PAvE.T1_vs_temporal.signed_logp.hist_top1K.pdf", width=8, height=10)
@@ -2238,41 +2415,52 @@ pdf(file = "rudflies_2023_redo.PAvE.T1_vs_temporal.signed_logp.hist_top1K.pdf", 
         ncol = 2, nrow = 6)
 dev.off()
 
+
+## Run t-tests to see if mean differences are negative (E-biased) for all contrasts
+## Specifically, we will test if the mean of the focal sets is less than 0
+ttest_res_1KPAvE_T1 <- c()
+for (x in c(8:19)) { #cycle through all contrasts
+	contrast <- temporal_contrast[x-7]
+	## Pull temporal contrast and calibrate sign to align with the PAvE.T1 contrast
+	templist <- cbind(freq_diff_sign_logp_PAvE_T1_top1K[,c(1,2)], 
+		(freq_diff_sign_logp_PAvE_T1_top1K[,x] * (abs(freq_diff_sign_logp_PAvE_T1_top1K[,6])/freq_diff_sign_logp_PAvE_T1_top1K[,6]))) 
+	names(templist)[3] <- "value"
+	ttest_res_1KPAvE_T1 <- rbind(ttest_res_1KPAvE_T1, cbind(contrast, t(t.test(templist$value, mu = 0, alternative = "less")[c(1,3,5)])))
+}
+
+## Save
+write.table(ttest_res_1KPAvE_T1, file="rudflies_2023_redo.ttest_res_1KPAvE_T1.txt", sep = "\t", quote = FALSE, row.names = F)
+
 ## Run t-tests to see if mean differences are more negative (E-biased) than matched sets 
 ## for all contrasts. 
 
 ## Matched set selection is more robust than checking for significantly negative values, 
 ## since many loci across the genome, unrelated to spinosyn adaption, may be experiencing  
-## negative directional selection in response to outdoor adaption. Unfortunately, matched  
+## negative directional selection in response to outdoor adaption. Matched  
 ## set selection on 10k SNPs for many iterarations for each contrast is memory and time  
 ## intensive, so here we'll focus on only the top 1k SNPs from the PAvE.T1 contrast. While  
 ## this is a smaller set than we tested above, these SNPs show a consistently stronger  
 ## signal of adaptation in PA populations, therefore the tests of pleiotropic costs of  
-## spinosyn adaption become even more robust. 
-
-## Find top 1K SNPs
-PAvE.T1.1K <- head(unique(glm.all[order(glm.all$PAvE.T1.fdr),]),1000)
-
-## Merge to retrieve sign-corrected -log10(p) values
-freq_diff_sign_logp_PAvE_T1_top1K <- merge(PAvE.T1.1K[,c(1:2)], freq_diff_sign_logp, by=c("CHROM","POS"))
+## putative spinosyn-adaptive loci become even more robust. 
 
 ## Find sign-corrected -log10(p) values for top 1k PAvE.T1 SNPs
-freq_diff_vep_sig <- merge(freq_diff_sign_logp_PAvE_T1_top1K, vep_priority, by=c("CHROM","POS"))
+freq_diff_sign_logp_PAvE_T1_top1K_vep_sig <- merge(freq_diff_sign_logp_PAvE_T1_top1K, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values all SNPs
+freq_diff_sign_logp_PAvE_T1_top1K_vep <- merge(freq_diff_sign_logp, vep_priority, by=c("CHROM","POS"))
 ## Find sign-corrected -log10(p) values for non-top 1k PAvE.T1 SNPs
-freq_diff_vep <- merge(freq_diff_sign_logp, vep_priority, by=c("CHROM","POS"))
-freq_diff_vep_nonsig <- anti_join(freq_diff_vep, freq_diff_vep_sig, by = c("CHROM","POS"))
+freq_diff_sign_logp_PAvE_T1_top1K_vep_nonsig <- anti_join(freq_diff_sign_logp_PAvE_T1_top1K_vep, freq_diff_sign_logp_PAvE_T1_top1K_vep_sig, by = c("CHROM","POS"))
 
 ## Prior to running t-tests, determine how many matches so we can exclude those with <5
 bg.samp.counts <- c()
 #This loop finds a random set of matched background genes
-for(j in c(1:nrow(freq_diff_vep_sig))) {
+for(j in c(1:nrow(freq_diff_sign_logp_PAvE_T1_top1K_vep_sig))) {
 	#Select matched lists based on following criteria
-	type <- freq_diff_vep_sig[j,]$Consequence
-	chrom <- freq_diff_vep_sig[j,]$CHROM
-	found <- freq_diff_vep_sig[j,]$E
-	pos <- freq_diff_vep_sig[j,]$POS
+	type <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[j,]$Consequence
+	chrom <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[j,]$CHROM
+	found <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[j,]$E
+	pos <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[j,]$POS
 	#Pull one match per candidate gene
-	bg.samp.temp <- nrow(freq_diff_vep_nonsig %>%
+	bg.samp.temp <- nrow(freq_diff_sign_logp_PAvE_T1_top1K_vep_nonsig %>%
 		filter( 
 		Consequence==type,
 		CHROM==chrom,
@@ -2282,42 +2470,690 @@ for(j in c(1:nrow(freq_diff_vep_sig))) {
 	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
 }
 
-## Initialize results table
-ttest_res_1kSNPs_vs_match <- c()
+## Initialize results tables
+ttest_res_PAvE_T1_1kSNPs_vs_match_cost <- c()
+ttest_res_PAvE_T1_1kSNPs_vs_match_benefit <- c()
 
 ## Run t-tests for all temporal contrast sign-corrected -log10(p) values
-for(i in c(5:16)) { #cycle through all contrasts
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(freq_diff_vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- freq_diff_vep_sig[j,]$Consequence
-			chrom <- freq_diff_vep_sig[j,]$CHROM
-			found <- freq_diff_vep_sig[j,]$E
-			pos <- freq_diff_vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(freq_diff_vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
+## This run 100 iterations of focal and matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[bg.samp.counts[,1]>4,]))) {
+		#Select matched lists based on following criteria
+		type <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[j,]$Consequence
+		chrom <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[j,]$CHROM
+		found <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[j,]$E
+		pos <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(freq_diff_sign_logp_PAvE_T1_top1K_vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	for(i in c(8:19)) { #cycle through all temporal contrasts 		
   		## Correct sign of delta AF from left-out sample using sign of left-in samples
   		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- freq_diff_vep_sig[,i] * (abs(freq_diff_vep_sig[,3])/freq_diff_vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,i] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+		focal.afdiff <- freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[,i] * (abs(freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[,6])/freq_diff_sign_logp_PAvE_T1_top1K_vep_sig[,6])
+		bg.afdiff <- bg.samp.list[,i] * (abs(bg.samp.list[,6])/bg.samp.list[,6])
 
-		# Run the t-test
-		ttest_res_1kSNPs_vs_match <- rbind(ttest_res_1kSNPs_vs_match,cbind(contrast=temporal_contrast[i-4],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "less")[c(1,2,3,7)])))
+		# Run the t-test - set to "less" for test for selective cost over time
+		ttest_res_PAvE_T1_1kSNPs_vs_match_cost <- rbind(ttest_res_PAvE_T1_1kSNPs_vs_match_cost,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "less")[c(1,2,3,7)])))
+		
+		# Run the t-test - set to "greater" for test for selective benefit over time
+		ttest_res_PAvE_T1_1kSNPs_vs_match_benefit <- rbind(ttest_res_PAvE_T1_1kSNPs_vs_match_benefit,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)])))
 	}
 }
+
+## Save tables
+write.table(ttest_res_PAvE_T1_1kSNPs_vs_match_cost, file="rudflies_2023_redo.ttest_res_PAvE_T1_1kSNPs_vs_match_cost.txt", sep = "\t", quote = FALSE, row.names = F) #cost table
+write.table(ttest_res_PAvE_T1_1kSNPs_vs_match_benefit, file="rudflies_2023_redo.ttest_res_PAvE_T1_1kSNPs_vs_match_benefit.txt", sep = "\t", quote = FALSE, row.names = F) #benefit table
+	
+
+##########################################################################
+### AF directional analysis for top 1K EvSE.T1 SNPs, ranked by GLM FDR ###
+##########################################################################
+
+## First, find top 1K SNPs
+EvSE.T1.1K <- head(unique(glm.temp[order(glm.temp$EvSE.T1.fdr),]),1000)
+
+## Merge to retrieve sign info
+freq_diff_sign_EvSE_T1_top1K <- merge(EvSE.T1.1K[,c(1:2)], freq_diff_sign[,-20], by=c("CHROM","POS"))
+
+## Here we recalibrate sign-correction factor for all temporal comparison to match 
+## direction of EvSE.T1 contrast for easier comparison
+freq_diff_sign_EvSE_T1_top1K_rel <- freq_diff_sign_EvSE_T1_top1K[,c(8:ncol(freq_diff_sign_EvSE_T1_top1K))] * freq_diff_sign_EvSE_T1_top1K[,3]
+
+## Get counts of positive (SE-biased) & negative (E-biased) AF directions per contrast
+freq_diff_sign_counts_EvSE_T1_top1K_rel <- lapply(freq_diff_sign_EvSE_T1_top1K_rel, table)
+
+## Make data frame
+freq_diff_sign_counts_EvSE_T1_top1K_rel <- do.call(rbind, lapply(freq_diff_sign_counts_EvSE_T1_top1K_rel, as.data.frame))
+
+## Make contrast field to keep track and filter
+freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast <- row.names(freq_diff_sign_counts_EvSE_T1_top1K_rel)
+
+## Remove number suffixes so like-contrasts can be plotted together
+freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast <- 
+gsub(".diff.1","",freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast)
+freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast <- 
+gsub(".diff.2","",freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast)
+freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast <- 
+gsub(".diff","",freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast)
+
+##Give Var1 field informative values and header
+freq_diff_sign_counts_EvSE_T1_top1K_rel$Var1 <- gsub("-1","E-biased",freq_diff_sign_counts_EvSE_T1_top1K_rel$Var1)
+freq_diff_sign_counts_EvSE_T1_top1K_rel$Var1 <- gsub("1","SE-biased",freq_diff_sign_counts_EvSE_T1_top1K_rel$Var1)
+names(freq_diff_sign_counts_EvSE_T1_top1K_rel)[1] <- "EvSE.T1_contrast"
+
+### Plot all p-value correlations to check for cost of adaptation
+pdf(file = "rudflies_2023_redo.EvSE.T1_vs_temporal.signed.stackbarplot_top1K.pdf", width=12, height=4)
+	ggplot(freq_diff_sign_counts_EvSE_T1_top1K_rel) +
+  		geom_bar(aes(x = contrast, y = Freq, fill = EvSE.T1_contrast), 
+           position = "stack", stat = "identity") +
+      	geom_hline(yintercept=500,color="black",linetype="dashed",linewidth=.25) +
+      	ggtitle("Direction of temporal AF change for top 1K outlier SNPs in EvSE.T1 contrast") +
+      	theme_classic()    
+dev.off()
+
+## Save plot as object for multi-panel plot
+freq_diff_sign_counts_EvSE_T1_top1K_rel_bar <-	ggplot(freq_diff_sign_counts_EvSE_T1_top1K_rel) +
+  		geom_bar(aes(x = contrast, y = Freq, fill = EvSE.T1_contrast), 
+           position = "stack", stat = "identity") +
+      	geom_hline(yintercept=500,color="black",linetype="dashed",linewidth=.25) +
+      	ggtitle("Direction of temporal AF change for top 1K outlier SNPs in EvSE.T1 contrast") +
+      	theme_classic()  
+      	
+
+### Statistical test associated with these stacked barplots would be binomial sign test
+## This will test if there are more E-biased AF differences than expected than 50/50
+
+## Initialize results table
+binom_res_1KSNP_EvSE.T1 <- c()
+
+## loop through all contrasts
+for (contrast in temporal_contrast) { #cycle through all contrasts
+	Ebias <- freq_diff_sign_counts_EvSE_T1_top1K_rel[freq_diff_sign_counts_EvSE_T1_top1K_rel$EvSE.T1_contrast=="E-biased" & freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast==contrast,]$Freq #save E-biased counts
+	SEbias <- 1000 - freq_diff_sign_counts_EvSE_T1_top1K_rel[freq_diff_sign_counts_EvSE_T1_top1K_rel$EvSE.T1_contrast=="E-biased" & freq_diff_sign_counts_EvSE_T1_top1K_rel$contrast==contrast,]$Freq #save SE-biased counts
+	##Run binomial test
+	binom_res_1KSNP_EvSE.T1 <- rbind(binom_res_1KSNP_EvSE.T1,cbind(contrast,(data.frame(t(binom.test(x = Ebias, n = Ebias + SEbias, p = 0.5, alternative = "greater")[c(1,3,5)])))))
+}
+
+## Save table
+fwrite(data.frame(binom_res_1KSNP_EvSE.T1), file="rudflies_2023_redo.binom_res_1KSNP_EvSE.T1.txt")
+
+
+### Directional histograms for top 1K EvSE.T1 SNPs ###
+
+## Merge to retrieve sign-corrected logp values
+#EvSE.T1.1K <- head(unique(glm.all[order(glm.all$EvSE.T1.fdr),]),10000)
+freq_diff_sign_logp_EvSE_T1_top1K <- merge(EvSE.T1.1K[,c(1:2)], freq_diff_sign_logp[,-20], by=c("CHROM","POS"))
+
+## Loop over temporal contrasts to make histograms of top 1K sign-corrected -log10p vals
+for (x in c(8:19)) { #cycle through all contrasts
+	## Pull temporal contrast and calibrate sign to align with the EvSE.T1 contrast
+	templist <- cbind(freq_diff_sign_logp_EvSE_T1_top1K[,c(1,2)], 
+		(freq_diff_sign_logp_EvSE_T1_top1K[,x] * (abs(freq_diff_sign_logp_EvSE_T1_top1K[,3])/freq_diff_sign_logp_EvSE_T1_top1K[,3]))) 
+	names(templist)[3] <- "value"
+	assign(paste("EvSE.T1_vs_",temporal_contrast[x-7],"_signed_hist_top1K",sep=""), 
+		ggplot(templist, 
+	  		aes(value)) + 
+	  		geom_histogram(bins = 100) +
+	  		xlab(paste(temporal_contrast[x-7]," p-values",sep="")) +
+	  		theme_classic())
+}
+
+### Plot all p-value correlations to check for cost of adaptation
+pdf(file = "rudflies_2023_redo.EvSE.T1_vs_temporal.signed_logp.hist_top1K.pdf", width=8, height=10)
+	ggarrange(EvSE.T1_vs_PA.T1vT2_signed_hist_top1K, 
+		EvSE.T1_vs_E.T1vT2_signed_hist_top1K, 
+		EvSE.T1_vs_PA.T1vT3_signed_hist_top1K, 
+		EvSE.T1_vs_E.T1vT3_signed_hist_top1K, 
+		EvSE.T1_vs_PA.T1vT4_signed_hist_top1K, 
+		EvSE.T1_vs_E.T1vT4_signed_hist_top1K, 
+		EvSE.T1_vs_PA.T2vT3_signed_hist_top1K, 
+		EvSE.T1_vs_E.T2vT3_signed_hist_top1K, 
+		EvSE.T1_vs_PA.T2vT4_signed_hist_top1K, 
+		EvSE.T1_vs_E.T2vT4_signed_hist_top1K, 
+		EvSE.T1_vs_PA.T3vT4_signed_hist_top1K, 
+		EvSE.T1_vs_E.T3vT4_signed_hist_top1K, 
+        ncol = 2, nrow = 6)
+dev.off()
+
+
+## Run t-tests to see if mean differences are negative (E-biased) for all contrasts
+## Specifically, we will test if the mean of the focal sets is less than 0
+ttest_res_1KEvSE_T1 <- c()
+for (x in c(8:19)) { #cycle through all contrasts
+	contrast <- temporal_contrast[x-7]
+	## Pull temporal contrast and calibrate sign to align with the EvSE.T1 contrast
+	templist <- cbind(freq_diff_sign_logp_EvSE_T1_top1K[,c(1,2)], 
+		(freq_diff_sign_logp_EvSE_T1_top1K[,x] * (abs(freq_diff_sign_logp_EvSE_T1_top1K[,3])/freq_diff_sign_logp_EvSE_T1_top1K[,3]))) 
+	names(templist)[3] <- "value"
+	ttest_res_1KEvSE_T1 <- rbind(ttest_res_1KEvSE_T1, cbind(contrast, t(t.test(templist$value, mu = 0, alternative = "less")[c(1,3,5)])))
+}
+
+## Save
+write.table(ttest_res_1KEvSE_T1, file="rudflies_2023_redo.ttest_res_1KEvSE_T1.txt", sep = "\t", quote = FALSE, row.names = F)
+
+## Run t-tests to see if mean differences are more negative (E-biased) than matched sets 
+## for all contrasts. 
+
+## Matched set selection is more robust than checking for significantly negative values, 
+## since many loci across the genome, unrelated to spinosyn adaption, may be experiencing  
+## negative directional selection in response to outdoor adaption. Matched  
+## set selection on 10k SNPs for many iterarations for each contrast is memory and time  
+## intensive, so here we'll focus on only the top 1k SNPs from the EvSE.T1 contrast. While  
+## this is a smaller set than we tested above, these SNPs show a consistently stronger  
+## signal of adaptation in PA populations, therefore the tests of pleiotropic costs of  
+## putative spinosyn-adaptive loci become even more robust. 
+
+## Find sign-corrected -log10(p) values for top 1k EvSE.T1 SNPs
+freq_diff_sign_logp_EvSE_T1_top1K_vep_sig <- merge(freq_diff_sign_logp_EvSE_T1_top1K, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values all SNPs
+freq_diff_sign_logp_EvSE_T1_top1K_vep <- merge(freq_diff_sign_logp, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values for non-top 1k EvSE.T1 SNPs
+freq_diff_sign_logp_EvSE_T1_top1K_vep_nonsig <- anti_join(freq_diff_sign_logp_EvSE_T1_top1K_vep, freq_diff_sign_logp_EvSE_T1_top1K_vep_sig, by = c("CHROM","POS"))
+
+## Prior to running t-tests, determine how many matches so we can exclude those with <5
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(freq_diff_sign_logp_EvSE_T1_top1K_vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[j,]$Consequence
+	chrom <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[j,]$CHROM
+	found <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[j,]$E
+	pos <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(freq_diff_sign_logp_EvSE_T1_top1K_vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+## Initialize results tables
+ttest_res_EvSE_T1_1kSNPs_vs_match_cost <- c()
+ttest_res_EvSE_T1_1kSNPs_vs_match_benefit <- c()
+
+## Run t-tests for all temporal contrast sign-corrected -log10(p) values
+## This run 100 iterations of focal and matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[bg.samp.counts[,1]>4,]))) {
+		#Select matched lists based on following criteria
+		type <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[j,]$Consequence
+		chrom <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[j,]$CHROM
+		found <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[j,]$E
+		pos <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(freq_diff_sign_logp_EvSE_T1_top1K_vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	for(i in c(8:19)) { #cycle through all temporal contrasts 		
+  		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		focal.afdiff <- freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[,i] * (abs(freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[,3])/freq_diff_sign_logp_EvSE_T1_top1K_vep_sig[,3])
+		bg.afdiff <- bg.samp.list[,i] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+
+		# Run the t-test - set to "less" for test for selective cost over time
+		ttest_res_EvSE_T1_1kSNPs_vs_match_cost <- rbind(ttest_res_EvSE_T1_1kSNPs_vs_match_cost,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "less")[c(1,2,3,7)])))
+		
+		# Run the t-test - set to "greater" for test for selective benefit over time
+		ttest_res_EvSE_T1_1kSNPs_vs_match_benefit <- rbind(ttest_res_EvSE_T1_1kSNPs_vs_match_benefit,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)])))
+	}
+}
+
+## Save tables
+write.table(ttest_res_EvSE_T1_1kSNPs_vs_match_cost, file="rudflies_2023_redo.ttest_res_EvSE_T1_1kSNPs_vs_match_cost.txt", sep = "\t", quote = FALSE, row.names = F) #cost table
+write.table(ttest_res_EvSE_T1_1kSNPs_vs_match_benefit, file="rudflies_2023_redo.ttest_res_EvSE_T1_1kSNPs_vs_match_benefit.txt", sep = "\t", quote = FALSE, row.names = F) #benefit table
+
+
+##########################################################################
+### AF directional analysis for top 1K EvSP.T1 SNPs, ranked by GLM FDR ###
+##########################################################################
+
+## First, find top 1K SNPs
+EvSP.T1.1K <- head(unique(glm.temp[order(glm.temp$EvSP.T1.fdr),]),1000)
+
+## Merge to retrieve sign info
+freq_diff_sign_EvSP_T1_top1K <- merge(EvSP.T1.1K[,c(1:2)], freq_diff_sign[,-20], by=c("CHROM","POS"))
+
+## Here we recalibrate sign-correction factor for all temporal comparison to match 
+## direction of EvSP.T1 contrast for easier comparison
+freq_diff_sign_EvSP_T1_top1K_rel <- freq_diff_sign_EvSP_T1_top1K[,c(8:ncol(freq_diff_sign_EvSP_T1_top1K))] * freq_diff_sign_EvSP_T1_top1K[,4]
+
+## Get counts of positive (SP-biased) & negative (E-biased) AF directions per contrast
+freq_diff_sign_counts_EvSP_T1_top1K_rel <- lapply(freq_diff_sign_EvSP_T1_top1K_rel, table)
+
+## Make data frame
+freq_diff_sign_counts_EvSP_T1_top1K_rel <- do.call(rbind, lapply(freq_diff_sign_counts_EvSP_T1_top1K_rel, as.data.frame))
+
+## Make contrast field to keep track and filter
+freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast <- row.names(freq_diff_sign_counts_EvSP_T1_top1K_rel)
+
+## Remove number suffixes so like-contrasts can be plotted together
+freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast <- 
+gsub(".diff.1","",freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast)
+freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast <- 
+gsub(".diff.2","",freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast)
+freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast <- 
+gsub(".diff","",freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast)
+
+##Give Var1 field informative values and header
+freq_diff_sign_counts_EvSP_T1_top1K_rel$Var1 <- gsub("-1","E-biased",freq_diff_sign_counts_EvSP_T1_top1K_rel$Var1)
+freq_diff_sign_counts_EvSP_T1_top1K_rel$Var1 <- gsub("1","SP-biased",freq_diff_sign_counts_EvSP_T1_top1K_rel$Var1)
+names(freq_diff_sign_counts_EvSP_T1_top1K_rel)[1] <- "EvSP.T1_contrast"
+
+
+### Plot all p-value correlations to check for cost of adaptation
+pdf(file = "rudflies_2023_redo.EvSP.T1_vs_temporal.signed.stackbarplot_top1K.pdf", width=12, height=4)
+	ggplot(freq_diff_sign_counts_EvSP_T1_top1K_rel) +
+  		geom_bar(aes(x = contrast, y = Freq, fill = EvSP.T1_contrast), 
+           position = "stack", stat = "identity") +
+      	geom_hline(yintercept=500,color="black",linetype="dashed",linewidth=.25) +
+      	ggtitle("Direction of temporal AF change for top 1K outlier SNPs in EvSP.T1 contrast") +
+      	theme_classic()    
+dev.off()
+
+## Save plot as object for multi-panel plot
+freq_diff_sign_counts_EvSP_T1_top1K_rel_bar <-	ggplot(freq_diff_sign_counts_EvSP_T1_top1K_rel) +
+  		geom_bar(aes(x = contrast, y = Freq, fill = EvSP.T1_contrast), 
+           position = "stack", stat = "identity") +
+      	geom_hline(yintercept=500,color="black",linetype="dashed",linewidth=.25) +
+      	ggtitle("Direction of temporal AF change for top 1K outlier SNPs in EvSP.T1 contrast") +
+      	theme_classic()  
+      	
+
+### Statistical test associated with these stacked barplots would be binomial sign test
+## This will test if there are more E-biased AF differences than expected than 50/50
+
+## Initialize results table
+binom_res_1KSNP_EvSP.T1 <- c()
+
+## loop through all contrasts
+for (contrast in temporal_contrast) { #cycle through all contrasts
+	Ebias <- freq_diff_sign_counts_EvSP_T1_top1K_rel[freq_diff_sign_counts_EvSP_T1_top1K_rel$EvSP.T1_contrast=="E-biased" & freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast==contrast,]$Freq #save E-biased counts
+	SPbias <- 1000 - freq_diff_sign_counts_EvSP_T1_top1K_rel[freq_diff_sign_counts_EvSP_T1_top1K_rel$EvSP.T1_contrast=="E-biased" & freq_diff_sign_counts_EvSP_T1_top1K_rel$contrast==contrast,]$Freq #save SP-biased counts
+	##Run binomial test
+	binom_res_1KSNP_EvSP.T1 <- rbind(binom_res_1KSNP_EvSP.T1,cbind(contrast,(data.frame(t(binom.test(x = Ebias, n = Ebias + SPbias, p = 0.5, alternative = "greater")[c(1,3,5)])))))
+}
+
+## Save table
+fwrite(data.frame(binom_res_1KSNP_EvSP.T1), file="rudflies_2023_redo.binom_res_1KSNP_EvSP.T1.txt")
+
+
+### Directional histograms for top 1K EvSP.T1 SNPs ###
+
+## Merge to retrieve sign-corrected logp values
+#EvSP.T1.1K <- head(unique(glm.all[order(glm.all$EvSP.T1.fdr),]),10000)
+freq_diff_sign_logp_EvSP_T1_top1K <- merge(EvSP.T1.1K[,c(1:2)], freq_diff_sign_logp[,-20], by=c("CHROM","POS"))
+
+## Loop over temporal contrasts to make histograms of top 1K sign-corrected -log10p vals
+for (x in c(8:19)) { #cycle through all contrasts
+	## Pull temporal contrast and calibrate sign to align with the EvSP.T1 contrast
+	templist <- cbind(freq_diff_sign_logp_EvSP_T1_top1K[,c(1,2)], 
+		(freq_diff_sign_logp_EvSP_T1_top1K[,x] * (abs(freq_diff_sign_logp_EvSP_T1_top1K[,4])/freq_diff_sign_logp_EvSP_T1_top1K[,4]))) 
+	names(templist)[3] <- "value"
+	assign(paste("EvSP.T1_vs_",temporal_contrast[x-7],"_signed_hist_top1K",sep=""), 
+		ggplot(templist, 
+	  		aes(value)) + 
+	  		geom_histogram(bins = 100) +
+	  		xlab(paste(temporal_contrast[x-7]," p-values",sep="")) +
+	  		theme_classic())
+}
+
+### Plot all p-value correlations to check for cost of adaptation
+pdf(file = "rudflies_2023_redo.EvSP.T1_vs_temporal.signed_logp.hist_top1K.pdf", width=8, height=10)
+	ggarrange(EvSP.T1_vs_PA.T1vT2_signed_hist_top1K, 
+		EvSP.T1_vs_E.T1vT2_signed_hist_top1K, 
+		EvSP.T1_vs_PA.T1vT3_signed_hist_top1K, 
+		EvSP.T1_vs_E.T1vT3_signed_hist_top1K, 
+		EvSP.T1_vs_PA.T1vT4_signed_hist_top1K, 
+		EvSP.T1_vs_E.T1vT4_signed_hist_top1K, 
+		EvSP.T1_vs_PA.T2vT3_signed_hist_top1K, 
+		EvSP.T1_vs_E.T2vT3_signed_hist_top1K, 
+		EvSP.T1_vs_PA.T2vT4_signed_hist_top1K, 
+		EvSP.T1_vs_E.T2vT4_signed_hist_top1K, 
+		EvSP.T1_vs_PA.T3vT4_signed_hist_top1K, 
+		EvSP.T1_vs_E.T3vT4_signed_hist_top1K, 
+        ncol = 2, nrow = 6)
+dev.off()
+
+
+## Run t-tests to see if mean differences are negative (E-biased) for all contrasts
+## Specifically, we will test if the mean of the focal sets is less than 0
+ttest_res_1KEvSP_T1 <- c()
+for (x in c(8:19)) { #cycle through all contrasts
+	contrast <- temporal_contrast[x-7]
+	## Pull temporal contrast and calibrate sign to align with the EvSP.T1 contrast
+	templist <- cbind(freq_diff_sign_logp_EvSP_T1_top1K[,c(1,2)], 
+		(freq_diff_sign_logp_EvSP_T1_top1K[,x] * (abs(freq_diff_sign_logp_EvSP_T1_top1K[,4])/freq_diff_sign_logp_EvSP_T1_top1K[,4]))) 
+	names(templist)[3] <- "value"
+	ttest_res_1KEvSP_T1 <- rbind(ttest_res_1KEvSP_T1, cbind(contrast, t(t.test(templist$value, mu = 0, alternative = "less")[c(1,3,5)])))
+}
+
+## Save
+write.table(ttest_res_1KEvSP_T1, file="rudflies_2023_redo.ttest_res_1KEvSP_T1.txt", sep = "\t", quote = FALSE, row.names = F)
+
+## Run t-tests to see if mean differences are more negative (E-biased) than matched sets 
+## for all contrasts. 
+
+## Matched set selection is more robust than checking for significantly negative values, 
+## since many loci across the genome, unrelated to spinosyn adaption, may be experiencing  
+## negative directional selection in response to outdoor adaption. Matched  
+## set selection on 10k SNPs for many iterarations for each contrast is memory and time  
+## intensive, so here we'll focus on only the top 1k SNPs from the EvSP.T1 contrast. While  
+## this is a smaller set than we tested above, these SNPs show a consistently stronger  
+## signal of adaptation in PA populations, therefore the tests of pleiotropic costs of  
+## putative spinosyn-adaptive loci become even more robust. 
+
+## Find sign-corrected -log10(p) values for top 1k EvSP.T1 SNPs
+freq_diff_sign_logp_EvSP_T1_top1K_vep_sig <- merge(freq_diff_sign_logp_EvSP_T1_top1K, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values all SNPs
+freq_diff_sign_logp_EvSP_T1_top1K_vep <- merge(freq_diff_sign_logp, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values for non-top 1k EvSP.T1 SNPs
+freq_diff_sign_logp_EvSP_T1_top1K_vep_nonsig <- anti_join(freq_diff_sign_logp_EvSP_T1_top1K_vep, freq_diff_sign_logp_EvSP_T1_top1K_vep_sig, by = c("CHROM","POS"))
+
+## Prior to running t-tests, determine how many matches so we can exclude those with <5
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(freq_diff_sign_logp_EvSP_T1_top1K_vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[j,]$Consequence
+	chrom <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[j,]$CHROM
+	found <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[j,]$E
+	pos <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(freq_diff_sign_logp_EvSP_T1_top1K_vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+## Initialize results tables
+ttest_res_EvSP_T1_1kSNPs_vs_match_cost <- c()
+ttest_res_EvSP_T1_1kSNPs_vs_match_benefit <- c()
+
+## Run t-tests for all temporal contrast sign-corrected -log10(p) values
+## This run 100 iterations of focal and matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[bg.samp.counts[,1]>4,]))) {
+		#Select matched lists based on following criteria
+		type <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[j,]$Consequence
+		chrom <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[j,]$CHROM
+		found <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[j,]$E
+		pos <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(freq_diff_sign_logp_EvSP_T1_top1K_vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	for(i in c(8:19)) { #cycle through all temporal contrasts 		
+  		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		focal.afdiff <- freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[,i] * (abs(freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[,4])/freq_diff_sign_logp_EvSP_T1_top1K_vep_sig[,4])
+		bg.afdiff <- bg.samp.list[,i] * (abs(bg.samp.list[,4])/bg.samp.list[,4])
+
+		# Run the t-test - set to "less" for test for selective cost over time
+		ttest_res_EvSP_T1_1kSNPs_vs_match_cost <- rbind(ttest_res_EvSP_T1_1kSNPs_vs_match_cost,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "less")[c(1,2,3,7)])))
+		
+		# Run the t-test - set to "greater" for test for selective benefit over time
+		ttest_res_EvSP_T1_1kSNPs_vs_match_benefit <- rbind(ttest_res_EvSP_T1_1kSNPs_vs_match_benefit,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)])))
+	}
+}
+
+## Save tables
+write.table(ttest_res_EvSP_T1_1kSNPs_vs_match_cost, file="rudflies_2023_redo.ttest_res_EvSP_T1_1kSNPs_vs_match_cost.txt", sep = "\t", quote = FALSE, row.names = F) #cost table
+write.table(ttest_res_EvSP_T1_1kSNPs_vs_match_benefit, file="rudflies_2023_redo.ttest_res_EvSP_T1_1kSNPs_vs_match_benefit.txt", sep = "\t", quote = FALSE, row.names = F) #benefit table
+
+
+##########################################################################
+### AF directional analysis for top 1K EvSP.T4 SNPs, ranked by GLM FDR ###
+##########################################################################
+
+## First, find top 1K SNPs
+EvSP.T4.1K <- head(unique(glm.temp[order(glm.temp$SvE.T4.fdr),]),1000)
+
+## Merge to retrieve sign info
+freq_diff_sign_EvSP_T4_top1K <- merge(EvSP.T4.1K[,c(1:2)], freq_diff_sign[,-20], by=c("CHROM","POS"))
+
+## Here we recalibrate sign-correction factor for all temporal comparison to match 
+## direction of EvSP.T4 contrast for easier comparison
+freq_diff_sign_EvSP_T4_top1K_rel <- freq_diff_sign_EvSP_T4_top1K[,c(8:ncol(freq_diff_sign_EvSP_T4_top1K))] * freq_diff_sign_EvSP_T4_top1K[,5]
+
+## Get counts of positive (SP-biased) & negative (E-biased) AF directions per contrast
+freq_diff_sign_counts_EvSP_T4_top1K_rel <- lapply(freq_diff_sign_EvSP_T4_top1K_rel, table)
+
+## Make data frame
+freq_diff_sign_counts_EvSP_T4_top1K_rel <- do.call(rbind, lapply(freq_diff_sign_counts_EvSP_T4_top1K_rel, as.data.frame))
+
+## Make contrast field to keep track and filter
+freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast <- row.names(freq_diff_sign_counts_EvSP_T4_top1K_rel)
+
+## Remove number suffixes so like-contrasts can be plotted together
+freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast <- 
+gsub(".diff.1","",freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast)
+freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast <- 
+gsub(".diff.2","",freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast)
+freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast <- 
+gsub(".diff","",freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast)
+
+##Give Var1 field informative values and header
+freq_diff_sign_counts_EvSP_T4_top1K_rel$Var1 <- gsub("-1","E-biased",freq_diff_sign_counts_EvSP_T4_top1K_rel$Var1)
+freq_diff_sign_counts_EvSP_T4_top1K_rel$Var1 <- gsub("1","SP-biased",freq_diff_sign_counts_EvSP_T4_top1K_rel$Var1)
+names(freq_diff_sign_counts_EvSP_T4_top1K_rel)[1] <- "EvSP.T4_contrast"
+
+
+### Plot all p-value correlations to check for cost of adaptation
+pdf(file = "rudflies_2023_redo.EvSP.T4_vs_temporal.signed.stackbarplot_top1K.pdf", width=12, height=4)
+	ggplot(freq_diff_sign_counts_EvSP_T4_top1K_rel) +
+  		geom_bar(aes(x = contrast, y = Freq, fill = EvSP.T4_contrast), 
+           position = "stack", stat = "identity") +
+      	geom_hline(yintercept=500,color="black",linetype="dashed",linewidth=.25) +
+      	ggtitle("Direction of temporal AF change for top 1K outlier SNPs in EvSP.T4 contrast") +
+      	theme_classic()    
+dev.off()
+
+## Save plot as object for multi-panel plot
+freq_diff_sign_counts_EvSP_T4_top1K_rel_bar <-	ggplot(freq_diff_sign_counts_EvSP_T4_top1K_rel) +
+  		geom_bar(aes(x = contrast, y = Freq, fill = EvSP.T4_contrast), 
+           position = "stack", stat = "identity") +
+      	geom_hline(yintercept=500,color="black",linetype="dashed",linewidth=.25) +
+      	ggtitle("Direction of temporal AF change for top 1K outlier SNPs in EvSP.T4 contrast") +
+      	theme_classic()  
+      	
+
+### Statistical test associated with these stacked barplots would be binomial sign test
+## This will test if there are more E-biased AF differences than expected than 50/50
+
+## Initialize results table
+binom_res_1KSNP_EvSP.T4 <- c()
+
+## loop through all contrasts
+for (contrast in temporal_contrast) { #cycle through all contrasts
+	Ebias <- freq_diff_sign_counts_EvSP_T4_top1K_rel[freq_diff_sign_counts_EvSP_T4_top1K_rel$EvSP.T4_contrast=="E-biased" & freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast==contrast,]$Freq #save E-biased counts
+	SPbias <- 1000 - freq_diff_sign_counts_EvSP_T4_top1K_rel[freq_diff_sign_counts_EvSP_T4_top1K_rel$EvSP.T4_contrast=="E-biased" & freq_diff_sign_counts_EvSP_T4_top1K_rel$contrast==contrast,]$Freq #save SP-biased counts
+	##Run binomial test
+	binom_res_1KSNP_EvSP.T4 <- rbind(binom_res_1KSNP_EvSP.T4,cbind(contrast,(data.frame(t(binom.test(x = Ebias, n = Ebias + SPbias, p = 0.5, alternative = "greater")[c(1,3,5)])))))
+}
+
+## Save table
+fwrite(data.frame(binom_res_1KSNP_EvSP.T4), file="rudflies_2023_redo.binom_res_1KSNP_EvSP.T4.txt")
+
+
+### Directional histograms for top 1K EvSP.T4 SNPs ###
+
+## Merge to retrieve sign-corrected logp values
+#EvSP.T4.1K <- head(unique(glm.all[order(glm.all$EvSP.T4.fdr),]),10000)
+freq_diff_sign_logp_EvSP_T4_top1K <- merge(EvSP.T4.1K[,c(1:2)], freq_diff_sign_logp[,-20], by=c("CHROM","POS"))
+
+## Loop over temporal contrasts to make histograms of top 1K sign-corrected -log10p vals
+for (x in c(8:19)) { #cycle through all contrasts
+	## Pull temporal contrast and calibrate sign to align with the EvSP.T4 contrast
+	templist <- cbind(freq_diff_sign_logp_EvSP_T4_top1K[,c(1,2)], 
+		(freq_diff_sign_logp_EvSP_T4_top1K[,x] * (abs(freq_diff_sign_logp_EvSP_T4_top1K[,5])/freq_diff_sign_logp_EvSP_T4_top1K[,5]))) 
+	names(templist)[3] <- "value"
+	assign(paste("EvSP.T4_vs_",temporal_contrast[x-7],"_signed_hist_top1K",sep=""), 
+		ggplot(templist, 
+	  		aes(value)) + 
+	  		geom_histogram(bins = 100) +
+	  		xlab(paste(temporal_contrast[x-7]," p-values",sep="")) +
+	  		theme_classic())
+}
+
+### Plot all p-value correlations to check for cost of adaptation
+pdf(file = "rudflies_2023_redo.EvSP.T4_vs_temporal.signed_logp.hist_top1K.pdf", width=8, height=10)
+	ggarrange(EvSP.T4_vs_PA.T1vT2_signed_hist_top1K, 
+		EvSP.T4_vs_E.T1vT2_signed_hist_top1K, 
+		EvSP.T4_vs_PA.T1vT3_signed_hist_top1K, 
+		EvSP.T4_vs_E.T1vT3_signed_hist_top1K, 
+		EvSP.T4_vs_PA.T1vT4_signed_hist_top1K, 
+		EvSP.T4_vs_E.T1vT4_signed_hist_top1K, 
+		EvSP.T4_vs_PA.T2vT3_signed_hist_top1K, 
+		EvSP.T4_vs_E.T2vT3_signed_hist_top1K, 
+		EvSP.T4_vs_PA.T2vT4_signed_hist_top1K, 
+		EvSP.T4_vs_E.T2vT4_signed_hist_top1K, 
+		EvSP.T4_vs_PA.T3vT4_signed_hist_top1K, 
+		EvSP.T4_vs_E.T3vT4_signed_hist_top1K, 
+        ncol = 2, nrow = 6)
+dev.off()
+
+
+## Run t-tests to see if mean differences are negative (E-biased) for all contrasts
+## Specifically, we will test if the mean of the focal sets is less than 0
+ttest_res_1KEvSP_T4 <- c()
+for (x in c(8:19)) { #cycle through all contrasts
+	contrast <- temporal_contrast[x-7]
+	## Pull temporal contrast and calibrate sign to align with the EvSP.T4 contrast
+	templist <- cbind(freq_diff_sign_logp_EvSP_T4_top1K[,c(1,2)], 
+		(freq_diff_sign_logp_EvSP_T4_top1K[,x] * (abs(freq_diff_sign_logp_EvSP_T4_top1K[,5])/freq_diff_sign_logp_EvSP_T4_top1K[,5]))) 
+	names(templist)[3] <- "value"
+	ttest_res_1KEvSP_T4 <- rbind(ttest_res_1KEvSP_T4, cbind(contrast, t(t.test(templist$value, mu = 0, alternative = "less")[c(1,3,5)])))
+}
+
+## Save
+write.table(ttest_res_1KEvSP_T4, file="rudflies_2023_redo.ttest_res_1KEvSP_T4.txt", sep = "\t", quote = FALSE, row.names = F)
+
+## Run t-tests to see if mean differences are more negative (E-biased) than matched sets 
+## for all contrasts. 
+
+## Matched set selection is more robust than checking for significantly negative values, 
+## since many loci across the genome, unrelated to spinosyn adaption, may be experiencing  
+## negative directional selection in response to outdoor adaption. Matched  
+## set selection on 10k SNPs for many iterarations for each contrast is memory and time  
+## intensive, so here we'll focus on only the top 1k SNPs from the EvSP.T4 contrast. While  
+## this is a smaller set than we tested above, these SNPs show a consistently stronger  
+## signal of adaptation in PA populations, therefore the tests of pleiotropic costs of  
+## putative spinosyn-adaptive loci become even more robust. 
+
+## Find sign-corrected -log10(p) values for top 1k EvSP.T4 SNPs
+freq_diff_sign_logp_EvSP_T4_top1K_vep_sig <- merge(freq_diff_sign_logp_EvSP_T4_top1K, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values all SNPs
+freq_diff_sign_logp_EvSP_T4_top1K_vep <- merge(freq_diff_sign_logp, vep_priority, by=c("CHROM","POS"))
+## Find sign-corrected -log10(p) values for non-top 1k EvSP.T4 SNPs
+freq_diff_sign_logp_EvSP_T4_top1K_vep_nonsig <- anti_join(freq_diff_sign_logp_EvSP_T4_top1K_vep, freq_diff_sign_logp_EvSP_T4_top1K_vep_sig, by = c("CHROM","POS"))
+
+## Prior to running t-tests, determine how many matches so we can exclude those with <5
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(freq_diff_sign_logp_EvSP_T4_top1K_vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[j,]$Consequence
+	chrom <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[j,]$CHROM
+	found <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[j,]$E
+	pos <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(freq_diff_sign_logp_EvSP_T4_top1K_vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+## Initialize results tables
+ttest_res_EvSP_T4_1kSNPs_vs_match_cost <- c()
+ttest_res_EvSP_T4_1kSNPs_vs_match_benefit <- c()
+
+## Run t-tests for all temporal contrast sign-corrected -log10(p) values
+## This run 100 iterations of focal and matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[bg.samp.counts[,1]>4,]))) {
+		#Select matched lists based on following criteria
+		type <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[j,]$Consequence
+		chrom <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[j,]$CHROM
+		found <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[j,]$E
+		pos <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(freq_diff_sign_logp_EvSP_T4_top1K_vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	for(i in c(8:19)) { #cycle through all temporal contrasts 		
+  		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		focal.afdiff <- freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[,i] * (abs(freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[,5])/freq_diff_sign_logp_EvSP_T4_top1K_vep_sig[,5])
+		bg.afdiff <- bg.samp.list[,i] * (abs(bg.samp.list[,5])/bg.samp.list[,5])
+
+		# Run the t-test - set to "less" for test for selective cost over time
+		ttest_res_EvSP_T4_1kSNPs_vs_match_cost <- rbind(ttest_res_EvSP_T4_1kSNPs_vs_match_cost,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "less")[c(1,2,3,7)])))
+		
+		# Run the t-test - set to "greater" for test for selective benefit over time
+		ttest_res_EvSP_T4_1kSNPs_vs_match_benefit <- rbind(ttest_res_EvSP_T4_1kSNPs_vs_match_benefit,cbind(contrast=temporal_contrast[i-7],mean_focal=mean(na.omit(focal.afdiff)),mean_BG=mean(na.omit(bg.afdiff)),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)])))
+	}
+}
+
+## Save tables
+write.table(ttest_res_EvSP_T4_1kSNPs_vs_match_cost, file="rudflies_2023_redo.ttest_res_EvSP_T4_1kSNPs_vs_match_cost.txt", sep = "\t", quote = FALSE, row.names = F) #cost table
+write.table(ttest_res_EvSP_T4_1kSNPs_vs_match_benefit, file="rudflies_2023_redo.ttest_res_EvSP_T4_1kSNPs_vs_match_benefit.txt", sep = "\t", quote = FALSE, row.names = F) #benefit table
+
+
+
+### Plot all 1K SNP barplots together to compare contrasts ###
+pdf(file = "rudflies_2023_redo.PAvE.T1_EvSE.T1_EvSP.T1_EvSP.T4.signed.multibarplot.pdf", width=12, height=12)
+	ggarrange(freq_diff_sign_counts_PAvE_T1_top1K_rel_bar, freq_diff_sign_counts_EvSE_T1_top1K_rel_bar, freq_diff_sign_counts_EvSP_T1_top1K_rel_bar, freq_diff_sign_counts_EvSP_T4_top1K_rel_bar,
+		ncol = 1, nrow = 4)
+dev.off()
+
 
 #########################################################################################
 ####### Test for costs using parallel AF differences to filter temporal contrasts ####### 
