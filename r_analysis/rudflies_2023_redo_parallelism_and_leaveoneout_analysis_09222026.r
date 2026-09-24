@@ -3330,98 +3330,112 @@ f=4 #pick E vs SE field for analysis
 ## Make list of all SE cages in T1
 SE_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SE",]$cage
 
-for(i in SE_loo_cages) { #cycle through all SE T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SET1clust_EvSET1_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSE.T1 FDR value from full-sample GLM
-		fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,4], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1[,c(1,2,9)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+### Table for sign-corrected AF diff for each leave one out GLM ###
+sign_table_EvSET1 <- haf.sites.filt #initialize table
 
-		# Run the t-test
-		assign(paste("ttest_SET1clust_EvSET1_topsig_no",i,sep=""), rbind(get(paste("ttest_SET1clust_EvSET1_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+## Cycle through all SE T1 cages
+for(i in SE_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SET1clust_EvSET1_topsig_no",i,sep=""),c())
+		## Build dataframe with delta AF from left-out and left in samples for comparison
+		sign_temp <- cbind(get(paste("freq_diff_no",i,"_bed",sep=""))[,c(1,2,f)],
+		AFdiff_LOO=get(paste("freq_diff_only",i,"_bed",sep=""))[,f])
+		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		sign_temp2 <- cbind(sign_temp[,c(1:2)], sign_temp[,4] * (abs(sign_temp[,3])/sign_temp[,3]))
+		## Rename column
+		names(sign_temp2)[3] <- paste("AFdiff_no",i,sep="")
+		## Add column to master sign-table
+		sign_table_EvSET1 <- merge(sign_table_EvSET1, sign_temp2, by=c("CHROM","POS"))		
+}
+
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSE.T1 FDR value from full-sample GLM
+fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,4], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1[,c(1,2,9)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSET1, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+	
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSET1, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SET1clust_EvSET1_topsig_no",SE_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SET1clust_EvSET1_topsig_no",SE_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_no", SE_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SET1clust_EvSET1_topsig <- rbind(cbind("no11","SE",ttest_SET1clust_EvSET1_topsig_no11),cbind("no21","SE",ttest_SET1clust_EvSET1_topsig_no21),cbind("no27","SE",ttest_SET1clust_EvSET1_topsig_no27),cbind("no41","SE",ttest_SET1clust_EvSET1_topsig_no41),cbind("no45","SE",ttest_SET1clust_EvSET1_topsig_no45))
+ttest_SET1clust_EvSET1_topsig <- rbind(cbind("no11","SET1clust",ttest_SET1clust_EvSET1_topsig_no11),
+	cbind("no21","SET1clust",ttest_SET1clust_EvSET1_topsig_no21),
+	cbind("no27","SET1clust",ttest_SET1clust_EvSET1_topsig_no27),
+	cbind("no41","SET1clust",ttest_SET1clust_EvSET1_topsig_no41),
+	cbind("no45","SET1clust",ttest_SET1clust_EvSET1_topsig_no45))
 
 write.table(ttest_SET1clust_EvSET1_topsig, file="rudflies_2023_redo.ttest_SET1clust_EvSET1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -3434,98 +3448,99 @@ f=4 #pick E vs SE field for analysis
 ## Make list of all SE cages in T1
 SE_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SE",]$cage
 
-for(i in SE_loo_cages) { #cycle through all SE T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SPT1clust_EvSET1_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSP.T1 FDR value from full-sample GLM
-		fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,5], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1[,c(1,2,9)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+## Cycle through all SE T1 cages
+for(i in SE_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SPT1clust_EvSET1_topsig_no",i,sep=""),c())	
+}
 
-		# Run the t-test
-		assign(paste("ttest_SPT1clust_EvSET1_topsig_no",i,sep=""), rbind(get(paste("ttest_SPT1clust_EvSET1_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSP.T1 FDR value from full-sample GLM
+fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,5], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1[,c(1,2,9)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSET1, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+		
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSET1, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SPT1clust_EvSET1_topsig_no",SE_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SPT1clust_EvSET1_topsig_no",SE_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_no", SE_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SPT1clust_EvSET1_topsig <- rbind(cbind("no11","SE",ttest_SPT1clust_EvSET1_topsig_no11),cbind("no21","SE",ttest_SPT1clust_EvSET1_topsig_no21),cbind("no27","SE",ttest_SPT1clust_EvSET1_topsig_no27),cbind("no41","SE",ttest_SPT1clust_EvSET1_topsig_no41),cbind("no45","SE",ttest_SPT1clust_EvSET1_topsig_no45))
+ttest_SPT1clust_EvSET1_topsig <- rbind(cbind("no11","SPT1clust",ttest_SPT1clust_EvSET1_topsig_no11),
+	cbind("no21","SPT1clust",ttest_SPT1clust_EvSET1_topsig_no21),
+	cbind("no27","SPT1clust",ttest_SPT1clust_EvSET1_topsig_no27),
+	cbind("no41","SPT1clust",ttest_SPT1clust_EvSET1_topsig_no41),
+	cbind("no45","SPT1clust",ttest_SPT1clust_EvSET1_topsig_no45))
 
 write.table(ttest_SPT1clust_EvSET1_topsig, file="rudflies_2023_redo.ttest_SPT1clust_EvSET1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -3538,98 +3553,99 @@ f=4 #pick E vs SE field for analysis
 ## Make list of all SE cages in T1
 SE_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SE",]$cage
 
-for(i in SE_loo_cages) { #cycle through all SE T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SPT4clust_EvSET1_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSP.T4 FDR value from full-sample GLM
-		fdr_temp <- cbind(glm_PAvSvE_TPT4[,c(1:2)], fdr=p.adjust(glm_PAvSvE_TPT4[,3], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4[,c(1,2,21)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+## Cycle through all SE T1 cages
+for(i in SE_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SPT4clust_EvSET1_topsig_no",i,sep=""),c())
+}
 
-		# Run the t-test
-		assign(paste("ttest_SPT4clust_EvSET1_topsig_no",i,sep=""), rbind(get(paste("ttest_SPT4clust_EvSET1_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSP.T4 FDR value from full-sample GLM
+fdr_temp <- cbind(glm_PAvSvE_TPT4[,c(1:2)], fdr=p.adjust(glm_PAvSvE_TPT4[,3], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4[,c(1,2,21)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSET1, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+		
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSET1, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SPT4clust_EvSET1_topsig_no",SE_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SPT4clust_EvSET1_topsig_no",SE_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_no", SE_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SPT4clust_EvSET1_topsig <- rbind(cbind("no11","SE",ttest_SPT4clust_EvSET1_topsig_no11),cbind("no21","SE",ttest_SPT4clust_EvSET1_topsig_no21),cbind("no27","SE",ttest_SPT4clust_EvSET1_topsig_no27),cbind("no41","SE",ttest_SPT4clust_EvSET1_topsig_no41),cbind("no45","SE",ttest_SPT4clust_EvSET1_topsig_no45))
+ttest_SPT4clust_EvSET1_topsig <- rbind(cbind("no11","SPT4clust",ttest_SPT4clust_EvSET1_topsig_no11),
+	cbind("no21","SPT4clust",ttest_SPT4clust_EvSET1_topsig_no21),
+	cbind("no27","SPT4clust",ttest_SPT4clust_EvSET1_topsig_no27),
+	cbind("no41","SPT4clust",ttest_SPT4clust_EvSET1_topsig_no41),
+	cbind("no45","SPT4clust",ttest_SPT4clust_EvSET1_topsig_no45))
 
 write.table(ttest_SPT4clust_EvSET1_topsig, file="rudflies_2023_redo.ttest_SPT4clust_EvSET1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -3642,98 +3658,112 @@ f=5 #pick E vs SP field for analysis
 ## Make list of all SP cages in T1
 SP_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SP",]$cage
 
-for(i in SP_loo_cages) { #cycle through all SP T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SET1clust_EvSPT1_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSE.T1 FDR value from full-sample GLM
-		fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,4], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1[,c(1,2,9)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+### Table for sign-corrected AF diff for each leave one out GLM ###
+sign_table_EvSPT1 <- haf.sites.filt #initialize table
 
-		# Run the t-test
-		assign(paste("ttest_SET1clust_EvSPT1_topsig_no",i,sep=""), rbind(get(paste("ttest_SET1clust_EvSPT1_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+## Cycle through all SE T1 cages
+for(i in SP_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SET1clust_EvSPT1_topsig_no",i,sep=""),c())
+		## Build dataframe with delta AF from left-out and left in samples for comparison
+		sign_temp <- cbind(get(paste("freq_diff_no",i,"_bed",sep=""))[,c(1,2,f)],
+		AFdiff_LOO=get(paste("freq_diff_only",i,"_bed",sep=""))[,f])
+		## Correct sign of delta AF from left-out sample using sign of left-in samples
+  		## This is done by multiplying positive or negative 1 
+		sign_temp2 <- cbind(sign_temp[,c(1:2)], sign_temp[,4] * (abs(sign_temp[,3])/sign_temp[,3]))
+		## Rename column
+		names(sign_temp2)[3] <- paste("AFdiff_no",i,sep="")
+		## Add column to master sign-table
+		sign_table_EvSPT1 <- merge(sign_table_EvSPT1, sign_temp2, by=c("CHROM","POS"))		
+}
+
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSE.T1 FDR value from full-sample GLM
+fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,4], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1[,c(1,2,9)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSPT1, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+		
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSPT1, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SET1clust_EvSPT1_topsig_no",SP_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SET1clust_EvSPT1_topsig_no",SP_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_no", SP_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SET1clust_EvSPT1_topsig <- rbind(cbind("no3","SP",ttest_SET1clust_EvSPT1_topsig_no3),cbind("no7","SP",ttest_SET1clust_EvSPT1_topsig_no7),cbind("no15","SP",ttest_SET1clust_EvSPT1_topsig_no15),cbind("no33","SP",ttest_SET1clust_EvSPT1_topsig_no33),cbind("no37","SP",ttest_SET1clust_EvSPT1_topsig_no37))
+ttest_SET1clust_EvSPT1_topsig <- rbind(cbind("no3","SET1clust",ttest_SET1clust_EvSPT1_topsig_no3),
+	cbind("no7","SET1clust",ttest_SET1clust_EvSPT1_topsig_no7),
+	cbind("no15","SET1clust",ttest_SET1clust_EvSPT1_topsig_no15),
+	cbind("no33","SET1clust",ttest_SET1clust_EvSPT1_topsig_no33),
+	cbind("no37","SET1clust",ttest_SET1clust_EvSPT1_topsig_no37))
 
 write.table(ttest_SET1clust_EvSPT1_topsig, file="rudflies_2023_redo.ttest_SET1clust_EvSPT1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -3746,98 +3776,99 @@ f=5 #pick E vs SP field for analysis
 ## Make list of all SP cages in T1
 SP_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SP",]$cage
 
-for(i in SP_loo_cages) { #cycle through all SP T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SPT1clust_EvSPT1_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSP.T1 FDR value from full-sample GLM
-		fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,5], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1[,c(1,2,9)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+## Cycle through all SE T1 cages
+for(i in SP_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SPT1clust_EvSPT1_topsig_no",i,sep=""),c())
+}
 
-		# Run the t-test
-		assign(paste("ttest_SPT1clust_EvSPT1_topsig_no",i,sep=""), rbind(get(paste("ttest_SPT1clust_EvSPT1_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSP.T1 FDR value from full-sample GLM
+fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,5], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1[,c(1,2,9)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSPT1, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+		
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSPT1, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_no", SP_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SPT1clust_EvSPT1_topsig <- rbind(cbind("no3","SP",ttest_SPT1clust_EvSPT1_topsig_no3),cbind("no7","SP",ttest_SPT1clust_EvSPT1_topsig_no7),cbind("no15","SP",ttest_SPT1clust_EvSPT1_topsig_no15),cbind("no33","SP",ttest_SPT1clust_EvSPT1_topsig_no33),cbind("no37","SP",ttest_SPT1clust_EvSPT1_topsig_no37))
+ttest_SPT1clust_EvSPT1_topsig <- rbind(cbind("no3","SPT1clust",ttest_SPT1clust_EvSPT1_topsig_no3),
+	cbind("no7","SPT1clust",ttest_SPT1clust_EvSPT1_topsig_no7),
+	cbind("no15","SPT1clust",ttest_SPT1clust_EvSPT1_topsig_no15),
+	cbind("no33","SPT1clust",ttest_SPT1clust_EvSPT1_topsig_no33),
+	cbind("no37","SPT1clust",ttest_SPT1clust_EvSPT1_topsig_no37))
 
 write.table(ttest_SPT1clust_EvSPT1_topsig, file="rudflies_2023_redo.ttest_SPT1clust_EvSPT1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -3850,98 +3881,99 @@ f=5 #pick E vs SP field for analysis
 ## Make list of all SP cages in T1
 SP_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SP",]$cage
 
-for(i in SP_loo_cages) { #cycle through all SP T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SPT4clust_EvSPT1_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSP.T4 FDR value from full-sample GLM
-		fdr_temp <- cbind(glm_PAvSvE_TPT4[,c(1:2)], fdr=p.adjust(glm_PAvSvE_TPT4[,3], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4[,c(1,2,21)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+## Cycle through all SE T1 cages
+for(i in SP_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SPT4clust_EvSPT1_topsig_no",i,sep=""),c())
+}
 
-		# Run the t-test
-		assign(paste("ttest_SPT4clust_EvSPT1_topsig_no",i,sep=""), rbind(get(paste("ttest_SPT4clust_EvSPT1_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSP.T4 FDR value from full-sample GLM
+fdr_temp <- cbind(glm_PAvSvE_TPT4[,c(1:2)], fdr=p.adjust(glm_PAvSvE_TPT4[,3], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4[,c(1,2,21)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSPT1, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+		
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSPT1, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SPT4clust_EvSPT1_topsig_no",SP_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SPT4clust_EvSPT1_topsig_no",SP_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_no", SP_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SPT4clust_EvSPT1_topsig <- rbind(cbind("no3","SP",ttest_SPT4clust_EvSPT1_topsig_no3),cbind("no7","SP",ttest_SPT4clust_EvSPT1_topsig_no7),cbind("no15","SP",ttest_SPT4clust_EvSPT1_topsig_no15),cbind("no33","SP",ttest_SPT4clust_EvSPT1_topsig_no33),cbind("no37","SP",ttest_SPT4clust_EvSPT1_topsig_no37))
+ttest_SPT4clust_EvSPT1_topsig <- rbind(cbind("no3","SPT4clust",ttest_SPT4clust_EvSPT1_topsig_no3),
+	cbind("no7","SPT4clust",ttest_SPT4clust_EvSPT1_topsig_no7),
+	cbind("no15","SPT4clust",ttest_SPT4clust_EvSPT1_topsig_no15),
+	cbind("no33","SPT4clust",ttest_SPT4clust_EvSPT1_topsig_no33),
+	cbind("no37","SPT4clust",ttest_SPT4clust_EvSPT1_topsig_no37))
 
 write.table(ttest_SPT4clust_EvSPT1_topsig, file="rudflies_2023_redo.ttest_SPT4clust_EvSPT1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -3954,98 +3986,111 @@ f=4 #pick E vs SP field for analysis
 ## Make list of all SP cages in T1
 SP_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SP",]$cage
 
-for(i in SP_loo_cages) { #cycle through all SP T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SET1clust_EvSPT4_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
+### Table for sign-corrected AF diff for each leave one out GLM ###
+sign_table_EvSPT4 <- haf.sites.filt #initialize table
+
+## Cycle through all SE T1 cages
+for(i in SP_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SET1clust_EvSPT4_topsig_no",i,sep=""),c())
 		## Build dataframe with delta AF from left-out and left in samples for comparison
 		sign_temp <- cbind(get(paste("freq_diff_t4_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_t4_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSE.T1 FDR value from full-sample GLM
-		fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,4], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1[,c(1,2,9)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
+		## Correct sign of delta AF from left-out sample using sign of left-in samples
   		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+		sign_temp2 <- cbind(sign_temp[,c(1:2)], sign_temp[,4] * (abs(sign_temp[,3])/sign_temp[,3]))
+		## Rename column
+		names(sign_temp2)[3] <- paste("AFdiff_no",i,sep="")
+		## Add column to master sign-table
+		sign_table_EvSPT4 <- merge(sign_table_EvSPT4, sign_temp2, by=c("CHROM","POS"))		
+}
 
-		# Run the t-test
-		assign(paste("ttest_SET1clust_EvSPT4_topsig_no",i,sep=""), rbind(get(paste("ttest_SET1clust_EvSPT4_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_t4_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSE.T1 FDR value from full-sample GLM
+fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,4], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSE.T1[,c(1,2,9)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSPT4, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+		
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSPT4, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SET1clust_EvSPT4_topsig_no",SP_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SET1clust_EvSPT4_topsig_no",SP_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_t4_no", SP_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SET1clust_EvSPT4_topsig <- rbind(cbind("no3","SP",ttest_SET1clust_EvSPT4_topsig_no3),cbind("no7","SP",ttest_SET1clust_EvSPT4_topsig_no7),cbind("no15","SP",ttest_SET1clust_EvSPT4_topsig_no15),cbind("no33","SP",ttest_SET1clust_EvSPT4_topsig_no33),cbind("no37","SP",ttest_SET1clust_EvSPT4_topsig_no37))
+ttest_SET1clust_EvSPT4_topsig <- rbind(cbind("no3","SET1clust",ttest_SET1clust_EvSPT4_topsig_no3),
+	cbind("no7","SET1clust",ttest_SET1clust_EvSPT4_topsig_no7),
+	cbind("no15","SET1clust",ttest_SET1clust_EvSPT4_topsig_no15),
+	cbind("no33","SET1clust",ttest_SET1clust_EvSPT4_topsig_no33),
+	cbind("no37","SET1clust",ttest_SET1clust_EvSPT4_topsig_no37))
 
 write.table(ttest_SET1clust_EvSPT4_topsig, file="rudflies_2023_redo.ttest_SET1clust_EvSPT4_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -4058,98 +4103,99 @@ f=4 #pick E vs SP field for analysis
 ## Make list of all SP cages in T1
 SP_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SP",]$cage
 
-for(i in SP_loo_cages) { #cycle through all SP T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SPT1clust_EvSPT4_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_t4_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_t4_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSP.T1 FDR value from full-sample GLM
-		fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,5], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1[,c(1,2,9)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+## Cycle through all SE T1 cages
+for(i in SP_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SPT1clust_EvSPT4_topsig_no",i,sep=""),c())	
+}
 
-		# Run the t-test
-		assign(paste("ttest_SPT1clust_EvSPT4_topsig_no",i,sep=""), rbind(get(paste("ttest_SPT1clust_EvSPT4_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_t4_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSP.T1 FDR value from full-sample GLM
+fdr_temp <- cbind(contrast.PAvSvSEvE.table[,c(1:2)], fdr=p.adjust(contrast.PAvSvSEvE.table[,5], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvSEvE_score_ttest_clusters_EvSP.T1[,c(1,2,9)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSPT4, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+		
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSPT4, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SPT1clust_EvSPT4_topsig_no",SP_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SPT1clust_EvSPT4_topsig_no",SP_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_t4_no", SP_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SPT1clust_EvSPT4_topsig <- rbind(cbind("no3","SP",ttest_SPT1clust_EvSPT4_topsig_no3),cbind("no7","SP",ttest_SPT1clust_EvSPT4_topsig_no7),cbind("no15","SP",ttest_SPT1clust_EvSPT4_topsig_no15),cbind("no33","SP",ttest_SPT1clust_EvSPT4_topsig_no33),cbind("no37","SP",ttest_SPT1clust_EvSPT4_topsig_no37))
+ttest_SPT1clust_EvSPT4_topsig <- rbind(cbind("no3","SPT1clust",ttest_SPT1clust_EvSPT4_topsig_no3),
+	cbind("no7","SPT1clust",ttest_SPT1clust_EvSPT4_topsig_no7),
+	cbind("no15","SPT1clust",ttest_SPT1clust_EvSPT4_topsig_no15),
+	cbind("no33","SPT1clust",ttest_SPT1clust_EvSPT4_topsig_no33),
+	cbind("no37","SPT1clust",ttest_SPT1clust_EvSPT4_topsig_no37))
 
 write.table(ttest_SPT1clust_EvSPT4_topsig, file="rudflies_2023_redo.ttest_SPT1clust_EvSPT4_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -4162,101 +4208,101 @@ f=4 #pick E vs SP field for analysis
 ## Make list of all SP cages in T1
 SP_loo_cages <- haf.meta.T1filt[haf.meta.T1filt$condition=="SP",]$cage
 
-for(i in SP_loo_cages) { #cycle through all SP T4 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_SPT4clust_EvSPT4_topsig_no",i,sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_t4_no",i,"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_t4_only",i,"_bed",sep=""))[,f])
-		## Retrieve EvSP.T4 FDR value from full-sample GLM
-		fdr_temp <- cbind(glm_PAvSvE_TPT4[,c(1:2)], fdr=p.adjust(glm_PAvSvE_TPT4[,3], method = "fdr"))
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4[,c(1,2,21)], by=c("CHROM","POS"))
-		#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-	
-		## Select 1 random SNP per cluster (optional but not used)
-		#vep_sig <- c()
-		#for(c in unique(vep_temp2$clust)) { 
-			#vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr < 0.05 & vep_temp2$clust == c,]),1))
-		#}
-		
-		## Select 1k random SNPs across genome (optional but not used)
-		#vep_sig <- sample_n(unique(vep_temp[vep_temp$fdr<0.05,]),min(nrow(unique(vep_temp[vep_temp$fdr<0.05,])),1000))
-		
-		## Select top 1K significant SNPs in order of FDR value (optional but not used)
-		#vep_sig <- head(unique(vep_temp[order(vep_temp$fdr),]),1000)
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
-		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- sample_n(vep_nonsig %>%
-		 		filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000),1)
-			#append to background list
-			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+## Cycle through all SE T1 cages
+for(i in SP_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_SPT4clust_EvSPT4_topsig_no",i,sep=""),c())	
+}
 
-		# Run the t-test
-		assign(paste("ttest_SPT4clust_EvSPT4_topsig_no",i,sep=""), rbind(get(paste("ttest_SPT4clust_EvSPT4_topsig_no",i,sep="")),cbind(contrast=names(get(paste("freq_diff_t4_no",i,"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+### Now we'll establish a list of the top loci per cluster based on GLM results 
+## Retrieve EvSP.T4 FDR value from full-sample GLM
+fdr_temp <- cbind(glm_PAvSvE_TPT4[,c(1:2)], fdr=p.adjust(glm_PAvSvE_TPT4[,3], method = "fdr"))
+## Add VEP info for finding matches
+vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+## Add cluster info
+vep_temp2 <- merge(vep_temp, glm_PAvSvE_TPT4_score_ttest_clusters_EvSP.T4[,c(1,2,21)], by=c("CHROM","POS"))
+#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+## Select top significant SNP per cluster
+vep_sig <- c()
+for(c in unique(vep_temp2$clust)) { 
+	vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+}
+
+## Retrieve sign-corrected AF differences for the top SNPs 
+vep_sig <- merge(sign_table_EvSPT4, vep_sig, by=c("CHROM","POS"))
+vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+		
+### Select non-significant SNPs to use as potential background matched SNPs
+vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+### First, determine how many matches so we can exclude loci without enough
+bg.samp.counts <- c()
+#This loop finds a random set of matched background genes
+for(j in c(1:nrow(vep_sig))) {
+	#Select matched lists based on following criteria
+	type <- vep_sig[j,]$Consequence
+	chrom <- vep_sig[j,]$CHROM
+	found <- vep_sig[j,]$E
+	pos <- vep_sig[j,]$POS
+	#Pull one match per candidate gene
+	bg.samp.temp <- nrow(vep_nonsig %>%
+		filter( 
+		Consequence==type,
+		CHROM==chrom,
+		((E < found*1.25) & (E > found*.75)),
+		abs(POS - pos) > 50000))
+	#append to background list
+	bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+}
+
+### Run t-tests for sign-corrected AF differences in focal SNPs vs. random background SNPs
+## This loop runs 100 iterations of matched SNP selection
+for(z in 1:100) { #set number of iterations
+	#Establish background non-candidate set
+	bg.samp.list <- c()
+	#This loop finds a random set of matched background genes
+	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+	  	#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- sample_n(vep_nonsig %>%
+		 	filter( 
+		    Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000),1)
+		#append to background list
+		bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
+	}
+	
+	## Pull sign-corrected AF diffs for BG SNPs
+	bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSPT4, by=c("CHROM","POS"))
+	
+	## Cycle through all SE T1 cages
+	for(x in 1:5) { 
+			## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+			## concordance between left-in and left-out compared with BG SNPs
+			assign(paste("ttest_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[x],sep=""), 
+			rbind(get(paste("ttest_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[x],sep="")),
+			cbind(contrast=names(get(paste("freq_diff_t4_no", SP_loo_cages[x], "_bed",sep="")))[f],
+			mean_focal=mean(vep_sig[,x+2]),mean_BG=mean(bg_table[,x+2]),
+			t(t.test(vep_sig[,x+2], bg_table[,x+2], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_SPT4clust_EvSPT4_topsig <- rbind(cbind("no3","SP",ttest_SPT4clust_EvSPT4_topsig_no3),cbind("no7","SP",ttest_SPT4clust_EvSPT4_topsig_no7),cbind("no15","SP",ttest_SPT4clust_EvSPT4_topsig_no15),cbind("no33","SP",ttest_SPT4clust_EvSPT4_topsig_no33),cbind("no37","SP",ttest_SPT4clust_EvSPT4_topsig_no37))
+ttest_SPT4clust_EvSPT4_topsig <- rbind(cbind("no3","SPT4clust",ttest_SPT4clust_EvSPT4_topsig_no3),
+	cbind("no7","SPT4clust",ttest_SPT4clust_EvSPT4_topsig_no7),
+	cbind("no15","SPT4clust",ttest_SPT4clust_EvSPT4_topsig_no15),
+	cbind("no33","SPT4clust",ttest_SPT4clust_EvSPT4_topsig_no33),
+	cbind("no37","SPT4clust",ttest_SPT4clust_EvSPT4_topsig_no37))
 
 write.table(ttest_SPT4clust_EvSPT4_topsig, file="rudflies_2023_redo.ttest_SPT4clust_EvSPT4_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
-
 
 
 
@@ -4317,7 +4363,7 @@ SP_loo_cages3 <- unlist(lapply(SP_loo_cages, function(x) paste0("freq_diff_no", 
 freq_diff_allLOO <- freq_diff_no3_bed[,c(1:2)]
 ## Cycle through all SE LOO tables and grab column 1 (EvSE.T1)
 for(f in SE_loo_cages3) {
-	freq_diff_allLOO <- cbind(freq_diff_allLOO,get(f)[,1] )
+	freq_diff_allLOO <- cbind(freq_diff_allLOO,abs(get(f)[,1]) )
 }
 ## Name columns
 names(freq_diff_allLOO)[c(3:7)] <- SE_loo_cages3
@@ -4325,7 +4371,7 @@ names(freq_diff_allLOO) <- gsub("freq_diff","EvSE.T1",names(freq_diff_allLOO))
 
 ## Cycle through all SP LOO tables and grab column 2 (EvSP.T1)
 for(f in SP_loo_cages3) {
-	freq_diff_allLOO <- cbind(freq_diff_allLOO,get(f)[,2] )
+	freq_diff_allLOO <- cbind(freq_diff_allLOO,abs(get(f)[,2]) )
 }
 ## Name columns
 names(freq_diff_allLOO)[c(8:12)] <- SP_loo_cages3
@@ -4763,25 +4809,25 @@ for(i in 23:32) { #loop through score columns, "SE" and "SP" contrasts with "E" 
 
 ## How many merged clusters in each contrast?
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no11))
-#[1] 138   5
+#[1] 185   5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no21))
-#[1] 100   5
+#[1] 155   5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no27))
-#[1] 133   5
+#[1] 187   5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no41))
-#[1] 108   5
+#[1] 145   5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSE.T1_no45))
-#[1] 120   5
+#[1] 154   5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no3))
-#[1] 20  5
+#[1] 62  5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no7))
-#[1] 35  5
+#[1] 94  5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no15))
-#[1] 27  5
+#[1] 68  5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no33))
-#[1] 60  5
+#[1] 138   5
 dim(as.data.frame(glm_PAvSvSEvE_LOO_score_ttest_intervals_EvSP.T1_no37))
-#[1] 55  5
+#[1] 148   5
 
 
 ### Plot EvSE.T1 clusters per contrast ###
@@ -5003,7 +5049,7 @@ SP_loo_cages5 <- unlist(lapply(SP_loo_cages, function(x) paste0("freq_diff_t4_no
 freq_diff_t4_allLOO <- freq_diff_t4_no3_bed[,c(1:2)]
 ## Cycle through all SP LOO tables and grab column 1 (EvSP.T4)
 for(f in SP_loo_cages5) {
-	freq_diff_t4_allLOO <- cbind(freq_diff_t4_allLOO,get(f)[,1] )
+	freq_diff_t4_allLOO <- cbind(freq_diff_t4_allLOO,abs(get(f)[,1]))
 }
 ## Name columns
 names(freq_diff_t4_allLOO)[c(3:7)] <- SP_loo_cages5
@@ -5443,15 +5489,15 @@ for(i in 13:17) { #loop through score columns, "SP" contrasts with "E" pops
 
 ## How many merged clusters in each contrast?
 dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no3))
-#[1] 360  5
+#[1] 380  5
 dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no7))
-#[1] 374  5
+#[1] 376  5
 dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no15))
-#[1] 325  5
+#[1] 367  5
 dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no33))
-#[1] 363  5
+#[1] 365  5
 dim(as.data.frame(glm_PAvSvE_TPT4_LOO_score_ttest_intervals_EvSP.T4_no37))
-#[1] 283  5
+#[1] 403  5
 
 
 ### Plot clusters per EvSP.T4 contrast ###
@@ -5548,7 +5594,7 @@ dev.off()
 ##############################################################################
 ### Test for elevated allele frequency differences of top outliers in each ###
 ### leave-one-out cluster set of interest: five samples from each of three ###
-### contrasts (EvSE.T1, EvSP.T1, EvSP.T4). There will be nine total        ###
+### contrasts (EvSE.T1, EvSP.T1, EvSP.T4). There will be fifteen total     ###
 ### comparisons (3 X 5).                                                   ###
 ##############################################################################
 
@@ -5557,59 +5603,65 @@ dev.off()
 ##############################################################
 f=4 #pick E vs SE field for analysis
 
-for(i in 1:5) { #cycle through all SE T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",SE_loo_cages[i],sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_no",SE_loo_cages[i],"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",SE_loo_cages[i],"_bed",sep=""))[,f])
-		## Retrieve EvSE.T1 FDR value from LOO GLM
-		fdr_temp <- cbind(glm_PAvSvSEvE_LOO_fdr[,c(1:2)], fdr=glm_PAvSvSEvE_LOO_fdr[,i+2])
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSE.T1_no", SE_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
-		## Filter for significant sites
-		vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+## Cycle through all SE T1 cages
+for(y in SE_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",y,sep=""),c())	
+}
 
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
+## For outer loop, cycle through all SE T1 cages to pick unique LOO GLM results & clusters
+for(i in 1:5) { 
+
+	### Now we'll establish a list of the top loci per cluster based on GLM results 
+	## Retrieve EvSE.T1 FDR value from LOO GLM
+	fdr_temp <- cbind(glm_PAvSvSEvE_LOO_fdr[,c(1:2)], fdr=glm_PAvSvSEvE_LOO_fdr[,i+2])
+	## Add VEP info for finding matches
+	vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+	## Add cluster info
+	vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSE.T1_no", SE_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
+	#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
 	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
+	## Select top significant SNP per cluster
+	vep_sig <- c()
+	for(c in unique(vep_temp2$clust)) { 
+		vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+	}
+
+	## Retrieve sign-corrected AF differences for the top SNPs 
+	vep_sig <- merge(sign_table_EvSET1[,c(1:2,i+2)], vep_sig, by=c("CHROM","POS"))
+	vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
 		
+	### Select non-significant SNPs to use as potential background matched SNPs
+	vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+	vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+	### First, determine how many matches so we can exclude loci without enough
+	bg.samp.counts <- c()
+	#This loop finds a random set of matched background genes
+	for(j in c(1:nrow(vep_sig))) {
+		#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- nrow(vep_nonsig %>%
+			filter( 
+			Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000))
+		#append to background list
+		bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+	}
+
+	### Run t-tests for sign-corrected AF differences in focal SNPs vs. random BG SNPs
+	## This loop runs 100 iterations of matched SNP selection
+	for(z in 1:100) { #set number of iterations
 		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+		bg.samp.list <- c()
+		#This loop finds a random set of matched background genes
+		for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
 	  		#Select matched lists based on following criteria
 			type <- vep_sig[j,]$Consequence
 			chrom <- vep_sig[j,]$CHROM
@@ -5624,27 +5676,28 @@ for(i in 1:5) { #cycle through all SE T1 cages
 				abs(POS - pos) > 50000),1)
 			#append to background list
 			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+		}
+		
+		## Pull sign-corrected AF diffs for BG SNPs 
+		bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSET1[,c(1:2,i+2)], by=c("CHROM","POS"))
 
-		# Run the t-test
-		assign(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",SE_loo_cages[i],sep=""), rbind(get(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",SE_loo_cages[i],sep="")),cbind(contrast=names(get(paste("freq_diff_no",SE_loo_cages[i],"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+		## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+		## concordance between left-in and left-out compared with BG SNPs
+		assign(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",SE_loo_cages[i],sep=""),
+		rbind(get(paste("ttest_LOO_SET1clust_EvSET1_topsig_no",SE_loo_cages[i],sep="")),
+		cbind(contrast=names(get(paste("freq_diff_no", SE_loo_cages[i], "_bed",sep="")))[f],mean_focal=mean(vep_sig[,3]),mean_BG=mean(bg_table[,3]),
+		t(t.test(vep_sig[,3], bg_table[,3], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_LOO_SET1clust_EvSET1_topsig <- rbind(cbind("no11","SE",ttest_LOO_SET1clust_EvSET1_topsig_no11),
-	cbind("no21","SE",ttest_LOO_SET1clust_EvSET1_topsig_no21),
-	cbind("no27","SE",ttest_LOO_SET1clust_EvSET1_topsig_no27),
-	cbind("no41","SE",ttest_LOO_SET1clust_EvSET1_topsig_no41),
-	cbind("no45","SE",ttest_LOO_SET1clust_EvSET1_topsig_no45))
+ttest_LOO_SET1clust_EvSET1_topsig <- rbind(cbind("no11","SET1clust",ttest_LOO_SET1clust_EvSET1_topsig_no11),
+	cbind("no21","SET1clust",ttest_LOO_SET1clust_EvSET1_topsig_no21),
+	cbind("no27","SET1clust",ttest_LOO_SET1clust_EvSET1_topsig_no27),
+	cbind("no41","SET1clust",ttest_LOO_SET1clust_EvSET1_topsig_no41),
+	cbind("no45","SET1clust",ttest_LOO_SET1clust_EvSET1_topsig_no45))
 
 write.table(ttest_LOO_SET1clust_EvSET1_topsig, file="rudflies_2023_redo.ttest_LOO_SET1clust_EvSET1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
-
 
 
 ##############################################################
@@ -5652,59 +5705,65 @@ write.table(ttest_LOO_SET1clust_EvSET1_topsig, file="rudflies_2023_redo.ttest_LO
 ##############################################################
 f=5 #pick E vs SP field for analysis
 
-for(i in 1:5) { #cycle through all SP T1 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[i],sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
-	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_no",SP_loo_cages[i],"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_only",SP_loo_cages[i],"_bed",sep=""))[,f])
-		## Retrieve EvSP.T1 FDR value from LOO GLM
-		fdr_temp <- cbind(glm_PAvSvSEvE_LOO_fdr[,c(1:2)], fdr=glm_PAvSvSEvE_LOO_fdr[,i+7])
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSP.T1_no", SP_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
-		## Filter for significant sites
-		vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+## Cycle through all SE T1 cages
+for(y in SP_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",y,sep=""),c())	
+}
 
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
+## For outer loop, cycle through all SP T1 cages to pick unique LOO GLM results & clusters
+for(i in 1:5) { 
+
+	### Now we'll establish a list of the top loci per cluster based on GLM results 
+	## Retrieve EvSP.T1 FDR value from LOO GLM
+	fdr_temp <- cbind(glm_PAvSvSEvE_LOO_fdr[,c(1:2)], fdr=glm_PAvSvSEvE_LOO_fdr[,i+7])
+	## Add VEP info for finding matches
+	vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+	## Add cluster info
+	vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvSEvE_LOO_score_ttest_clusters_EvSP.T1_no", SP_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
+	#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
 	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
+	## Select top significant SNP per cluster
+	vep_sig <- c()
+	for(c in unique(vep_temp2$clust)) { 
+		vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+	}
+
+	## Retrieve sign-corrected AF differences for the top SNPs 
+	vep_sig <- merge(sign_table_EvSPT1[,c(1:2,i+2)], vep_sig, by=c("CHROM","POS"))
+	vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
 		
+	### Select non-significant SNPs to use as potential background matched SNPs
+	vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+	vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+	### First, determine how many matches so we can exclude loci without enough
+	bg.samp.counts <- c()
+	#This loop finds a random set of matched background genes
+	for(j in c(1:nrow(vep_sig))) {
+		#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- nrow(vep_nonsig %>%
+			filter( 
+			Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000))
+		#append to background list
+		bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+	}
+
+	### Run t-tests for sign-corrected AF differences in focal SNPs vs. random BG SNPs
+	## This loop runs 100 iterations of matched SNP selection
+	for(z in 1:100) { #set number of iterations
 		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+		bg.samp.list <- c()
+		#This loop finds a random set of matched background genes
+		for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
 	  		#Select matched lists based on following criteria
 			type <- vep_sig[j,]$Consequence
 			chrom <- vep_sig[j,]$CHROM
@@ -5719,24 +5778,26 @@ for(i in 1:5) { #cycle through all SP T1 cages
 				abs(POS - pos) > 50000),1)
 			#append to background list
 			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+		}
+		
+		## Pull sign-corrected AF diffs for BG SNPs 
+		bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSPT1[,c(1:2,i+2)], by=c("CHROM","POS"))
 
-		# Run the t-test
-		assign(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[i],sep=""), rbind(get(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[i],sep="")),cbind(contrast=names(get(paste("freq_diff_no",SP_loo_cages[i],"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+		## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+		## concordance between left-in and left-out compared with BG SNPs
+		assign(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[i],sep=""),
+		rbind(get(paste("ttest_LOO_SPT1clust_EvSPT1_topsig_no",SP_loo_cages[i],sep="")),
+		cbind(contrast=names(get(paste("freq_diff_no", SP_loo_cages[i], "_bed",sep="")))[f],mean_focal=mean(vep_sig[,3]),mean_BG=mean(bg_table[,3]),
+		t(t.test(vep_sig[,3], bg_table[,3], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_LOO_SPT1clust_EvSPT1_topsig <- rbind(cbind("no3","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no3),
-	cbind("no7","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no7),
-	cbind("no15","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no15),
-	cbind("no33","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no33),
-	cbind("no37","SP",ttest_LOO_SPT1clust_EvSPT1_topsig_no37))
+ttest_LOO_SPT1clust_EvSPT1_topsig <- rbind(cbind("no3","SPT1clust",ttest_LOO_SPT1clust_EvSPT1_topsig_no3),
+	cbind("no7","SPT1clust",ttest_LOO_SPT1clust_EvSPT1_topsig_no7),
+	cbind("no15","SPT1clust",ttest_LOO_SPT1clust_EvSPT1_topsig_no15),
+	cbind("no33","SPT1clust",ttest_LOO_SPT1clust_EvSPT1_topsig_no33),
+	cbind("no37","SPT1clust",ttest_LOO_SPT1clust_EvSPT1_topsig_no37))
 
 write.table(ttest_LOO_SPT1clust_EvSPT1_topsig, file="rudflies_2023_redo.ttest_LOO_SPT1clust_EvSPT1_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
 
@@ -5746,59 +5807,65 @@ write.table(ttest_LOO_SPT1clust_EvSPT1_topsig, file="rudflies_2023_redo.ttest_LO
 ##############################################################
 f=4 #pick E vs SP field for analysis
 
-for(i in 1:5) { #cycle through all SP T4 cages
-	### T-tests for all contrasts each leave one out GLM ###
-	assign(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[i],sep=""),c())
-	## This run 100 iterations of focal and matched SNP selection
+## Cycle through all SE T1 cages
+for(y in SP_loo_cages) { 
+		## Initialize t-tests tables for all leave one out GLMs
+		assign(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",y,sep=""),c())		
+}
+
+## For outer loop, cycle through all SP T4 cages to pick unique LOO GLM results & clusters
+for(i in 1:5) { 
+
+	### Now we'll establish a list of the top loci per cluster based on GLM results 
+	## Retrieve EvSP.T4 FDR value from LOO GLM
+	fdr_temp <- cbind(glm_PAvSvE_TPT4_LOO_fdr[,c(1:2)], fdr=glm_PAvSvE_TPT4_LOO_fdr[,i+2])
+	## Add VEP info for finding matches
+	vep_temp <- merge(fdr_temp, vep_priority, by=c("CHROM","POS"))
+	## Add cluster info
+	vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvE_TPT4_LOO_score_ttest_clusters_EvSP.T4_no", SP_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
+	#vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
+	
+	## Select top significant SNP per cluster
+	vep_sig <- c()
+	for(c in unique(vep_temp2$clust)) { 
+		vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
+	}
+
+	## Retrieve sign-corrected AF differences for the top SNPs 
+	vep_sig <- merge(sign_table_EvSPT4[,c(1:2,i+2)], vep_sig, by=c("CHROM","POS"))
+	vep_sig <- unique(vep_sig[vep_sig$fdr<0.05,]) #confirm top candidates are significant
+	
+	### Select non-significant SNPs to use as potential background matched SNPs
+	vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
+	vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
+	
+	### First, determine how many matches so we can exclude loci without enough
+	bg.samp.counts <- c()
+	#This loop finds a random set of matched background genes
+	for(j in c(1:nrow(vep_sig))) {
+		#Select matched lists based on following criteria
+		type <- vep_sig[j,]$Consequence
+		chrom <- vep_sig[j,]$CHROM
+		found <- vep_sig[j,]$E
+		pos <- vep_sig[j,]$POS
+		#Pull one match per candidate gene
+		bg.samp.temp <- nrow(vep_nonsig %>%
+			filter( 
+			Consequence==type,
+			CHROM==chrom,
+			((E < found*1.25) & (E > found*.75)),
+			abs(POS - pos) > 50000))
+		#append to background list
+		bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
+	}
+
+	### Run t-tests for sign-corrected AF differences in focal SNPs vs. random BG SNPs
+	## This loop runs 100 iterations of matched SNP selection
 	for(z in 1:100) { #set number of iterations
-		## Build dataframe with delta AF from left-out and left in samples for comparison
-		sign_temp <- cbind(get(paste("freq_diff_t4_no",SP_loo_cages[i],"_bed",sep=""))[,c(1,2,f)],AFdiff_LOO=get(paste("freq_diff_t4_only",SP_loo_cages[i],"_bed",sep=""))[,f])
-		## Retrieve EvSP.T4 FDR value from full-sample GLM
-		fdr_temp <- cbind(glm_PAvSvE_TPT4_LOO[,c(1:2)], fdr=glm_PAvSvE_TPT4_LOO[,i+2])
-		## Join them together
-		sign_temp <- merge(sign_temp, fdr_temp, by=c("CHROM","POS"))
-		## Add VEP info for finding matches
-		vep_temp <- merge(sign_temp, vep_priority, by=c("CHROM","POS"))
-		## Add cluster info
-		vep_temp2 <- merge(vep_temp, get(paste("glm_PAvSvE_TPT4_LOO_score_ttest_clusters_EvSP.T4_no", SP_loo_cages[i], sep=""))[,c(1,2,4)], by=c("CHROM","POS"))
-		## Filter for significant sites
-		vep_temp2  <- vep_temp2[vep_temp2$fdr<0.05,]
-	
-		## Select top significant SNP per cluster
-		vep_sig <- c()
-		for(c in unique(vep_temp2$clust)) { 
-			vep_sig <- rbind(vep_sig, sample_n(unique(vep_temp2[vep_temp2$fdr == min(vep_temp2[vep_temp2$clust == c,]$fdr) & vep_temp2$clust == c,]),1))
-		}
-		
-		## Select non-significant SNPs to use as potential background matched SNPs
-		vep_nonsig <- unique(vep_temp[vep_temp$fdr>0.05,])
-		vep_nonsig <- vep_nonsig[!vep_nonsig$POS %in% (vep_temp2$POS), ]
-		vep_sig_list <- unique(vep_sig[,c(1:2)])
-	
-		###First, determine how many matches so we can exclude those without any
-		bg.samp.counts <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in c(1:nrow(vep_sig))) {
-	  		#Select matched lists based on following criteria
-			type <- vep_sig[j,]$Consequence
-			chrom <- vep_sig[j,]$CHROM
-			found <- vep_sig[j,]$E
-			pos <- vep_sig[j,]$POS
-			#Pull one match per candidate gene
-			bg.samp.temp <- nrow(vep_nonsig %>%
-		 	filter( 
-		    	Consequence==type,
-				CHROM==chrom,
-				((E < found*1.25) & (E > found*.75)),
-				abs(POS - pos) > 50000))
-			#append to background list
-			bg.samp.counts <- rbind(bg.samp.counts,bg.samp.temp)
-	 	 }
-		
 		#Establish background non-candidate set
-	  	bg.samp.list <- c()
-	  	#This loop finds a random set of matched background genes
-	  	for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
+		bg.samp.list <- c()
+		#This loop finds a random set of matched background genes
+		for(j in as.character(rownames(vep_sig[bg.samp.counts[,1]>4,]))) {
 	  		#Select matched lists based on following criteria
 			type <- vep_sig[j,]$Consequence
 			chrom <- vep_sig[j,]$CHROM
@@ -5813,23 +5880,26 @@ for(i in 1:5) { #cycle through all SP T4 cages
 				abs(POS - pos) > 50000),1)
 			#append to background list
 			bg.samp.list <- rbind(bg.samp.list,bg.samp.temp)
-	  	}
-  		
-  		## Correct sign of delta AF from left-out sample using sign of left-in samples
-  		## This is done by multiplying positive or negative 1 
-		focal.afdiff <- vep_sig[,4] * (abs(vep_sig[,3])/vep_sig[,3])
-		bg.afdiff <- bg.samp.list[,4] * (abs(bg.samp.list[,3])/bg.samp.list[,3])
+		}
+		
+		## Pull sign-corrected AF diffs for BG SNPs 
+		bg_table <- merge(bg.samp.list[,c(1:2)], sign_table_EvSPT4[,c(1:2,i+2)], by=c("CHROM","POS"))
 
-		# Run the t-test
-		assign(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[i],sep=""), rbind(get(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[i],sep="")),cbind(contrast=names(get(paste("freq_diff_t4_no",SP_loo_cages[i],"_bed",sep="")))[f],mean_focal=mean(focal.afdiff),mean_BG=mean(bg.afdiff),t(t.test(focal.afdiff, bg.afdiff, alternative = "greater")[c(1,2,3,7)]))))
+		## Run one-tailed t-test - "greater" tests for higher magnitude AF diff and 
+		## concordance between left-in and left-out compared with BG SNPs
+		assign(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[i],sep=""),
+		rbind(get(paste("ttest_LOO_SPT4clust_EvSPT4_topsig_no",SP_loo_cages[i],sep="")),
+		cbind(contrast=names(get(paste("freq_diff_t4_no", SP_loo_cages[i], "_bed",sep="")))[f],mean_focal=mean(vep_sig[,3]),mean_BG=mean(bg_table[,3]),
+		t(t.test(vep_sig[,3], bg_table[,3], alternative = "greater")[c(1,2,3,7)]))))
 	}
 }
 
 ## Join all t-test results together and save
-ttest_LOO_SPT4clust_EvSPT4_topsig <- rbind(cbind("no3","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no3),
-	cbind("no7","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no7),
-	cbind("no15","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no15),
-	cbind("no33","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no33),
-	cbind("no37","SP",ttest_LOO_SPT4clust_EvSPT4_topsig_no37))
+ttest_LOO_SPT4clust_EvSPT4_topsig <- rbind(cbind("no3","SPT4clust",ttest_LOO_SPT4clust_EvSPT4_topsig_no3),
+	cbind("no7","SPT4clust",ttest_LOO_SPT4clust_EvSPT4_topsig_no7),
+	cbind("no15","SPT4clust",ttest_LOO_SPT4clust_EvSPT4_topsig_no15),
+	cbind("no33","SPT4clust",ttest_LOO_SPT4clust_EvSPT4_topsig_no33),
+	cbind("no37","SPT4clust",ttest_LOO_SPT4clust_EvSPT4_topsig_no37))
+names(ttest_LOO_SPT4clust_EvSPT4_topsig)[c(1:2)]
 
 write.table(ttest_LOO_SPT4clust_EvSPT4_topsig, file="rudflies_2023_redo.ttest_LOO_SPT4clust_EvSPT4_topsig_results.txt", sep = "\t", quote = FALSE, row.names = F)
