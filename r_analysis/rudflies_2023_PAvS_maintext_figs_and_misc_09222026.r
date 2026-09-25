@@ -2,7 +2,9 @@
 ### This script is associated with a study on the evolution of spinosad-resistance in  ###
 ### field populations of Drosophila melanogaster run in 2023 by the Rudman lab (WSUV). ###
 ### This particular script contains primary plotting and statistical analysis for the  ###
-### main manscript. Several supplementary plots and results were generated here too.   ###
+### main manscript, "Contingency and determinism in rapid adaptation shape evolutionary###
+### rescue and extinction in Drosophila". Several supplementary plots and results were ###
+### generated here too.                                                                ###
 ##########################################################################################							
 
 ### In R ###
@@ -93,6 +95,149 @@ haf.meta.T1filt$treat <- as.factor(haf.meta.T1filt$treat)
 haf.meta.T1filt$tpt <- as.factor(haf.meta.T1filt$tpt)
 haf.meta.T1filt$condition <- as.factor(haf.meta.T1filt$condition)
 haf.meta.T1filt <- haf.meta.T1filt[order(haf.meta.T1filt$samp),]
+
+
+###########################################################
+### For analysis of "variance filter" efficacy, create  ### 
+### TPT1-only metadata and freq tables with the filter  ###
+### (var>0.001) and with the reverse filter (var<0.001) ### 
+### applied.                                            ###
+###########################################################
+
+### First, create an allele-frequency mean table using variance filtered data ###
+
+## Calculate mean allele frequencies for each treatment at TPT1
+freq_means_t1 <- cbind(haf.sites.T1filt,
+	E.af=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$treat.fix == "E" & haf.meta.T1filt$tpt=="1"]),
+	S.af=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$treat.fix == "S" & haf.meta.T1filt$tpt=="1"]),
+	SE.af=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition == "SE" & haf.meta.T1filt$tpt=="1"]),
+	SP.af=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition == "SP" & haf.meta.T1filt$tpt=="1"]),
+	PA.af=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$treat.fix == "PA"&haf.meta.T1filt$tpt=="1"]))
+
+## Calculate pairwise allele frequency differences for each pair of treatments at TPT1
+freq_diff_t1 <- cbind(EvSE.T1.diff=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="E"]) - rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="SE"]),
+	EvSP.T1.diff=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="E"]) - rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="SP"]),
+	EvPA.T1.diff=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="E"]) - rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="PA"]),
+	SEvPA.T1.diff=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="SE"]) - rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="PA"]),
+	SPvPA.T1.diff=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="SP"]) - rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="PA"]),
+	SEvSP.T1.diff=rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="SE"]) - rowMeans(haf.freq.T1filt[,haf.meta.T1filt$condition=="SP"]))
+
+
+### Second, create an allele-frequency mean table using reverse variance filtered data ###
+
+## filter frequency table to get desired samples
+haf.freq.T1revfilt <- haf.freq[, which((names(haf.freq) %in% haf.meta.T1filt$samp)==TRUE)]
+
+## filter to retain only low variance loci
+haf.sites.T1revfilt <- haf.freq[rowVars(as.matrix(haf.freq.T1revfilt))<0.001,c(1:2)]
+haf.freq.T1revfilt <- haf.freq.T1revfilt[rowVars(as.matrix(haf.freq.T1revfilt))<0.001,]
+
+## Calculate mean allele frequencies for each treatment at TPT1
+freq_means_t1_revfilt <- cbind(haf.sites.T1revfilt,
+	E.af=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$treat.fix == "E" & haf.meta.T1filt$tpt=="1"]),
+	S.af=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$treat.fix == "S" & haf.meta.T1filt$tpt=="1"]),
+	SE.af=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition == "SE" & haf.meta.T1filt$tpt=="1"]),
+	SP.af=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition == "SP" & haf.meta.T1filt$tpt=="1"]),
+	PA.af=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$treat.fix == "PA"&haf.meta.T1filt$tpt=="1"]))
+
+## Calculate pairwise allele frequency differences for each pair of treatments at TPT1
+freq_diff_t1_revfilt <- cbind(EvSE.T1.diff=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="E"]) - rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="SE"]),
+	EvSP.T1.diff=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="E"]) - rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="SP"]),
+	EvPA.T1.diff=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="E"]) - rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="PA"]),
+	SEvPA.T1.diff=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="SE"]) - rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="PA"]),
+	SPvPA.T1.diff=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="SP"]) - rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="PA"]),
+	SEvSP.T1.diff=rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="SE"]) - rowMeans(haf.freq.T1revfilt[,haf.meta.T1filt$condition=="SP"]))
+
+
+### Summarize results ###
+
+## Initialize summary table 
+varfilt_table <- data.frame(matrix(NA, nrow = 3, ncol = 4))
+
+## Store results with variance filter applied
+varfilt_table[1,1] <- nrow(freq_diff_t1) #all SNPs
+varfilt_table[2,1] <- nrow(freq_diff_t1[rowMaxs(abs(freq_diff_t1))>0.05,]) #AF diff > 0.05
+varfilt_table[3,1] <- nrow(freq_diff_t1[rowMaxs(abs(freq_diff_t1))>0.1,]) #AF diff > 0.1
+
+## Store results with reverse variance filter applied
+varfilt_table[1,2] <- nrow(freq_diff_t1_revfilt) #all filtered out SNPs
+varfilt_table[2,2] <- nrow(freq_diff_t1_revfilt[rowMaxs(abs(freq_diff_t1_revfilt))>0.05,]) #AF diff > 0.05
+varfilt_table[3,2] <- nrow(freq_diff_t1_revfilt[rowMaxs(abs(freq_diff_t1_revfilt))>0.1,]) #AF diff > 0.1
+
+## Store results with variance filter applied plus AF mean filter (AF mean > 0.05 & < 0.95)
+varfilt_table[1,3] <- nrow(freq_diff_t1[rowMeans(freq_means_t1[,-c(1:2)]) > 0.05 &
+	rowMeans(freq_means_t1[,-c(1:2)]) < 0.95,]) #all SNPs
+varfilt_table[2,3] <- nrow(freq_diff_t1[rowMaxs(abs(freq_diff_t1))>0.05 &
+	rowMeans(freq_means_t1[,-c(1:2)]) > 0.05 &
+	rowMeans(freq_means_t1[,-c(1:2)]) < 0.95,]) #AF diff > 0.05
+varfilt_table[3,3] <- nrow(freq_diff_t1[rowMaxs(abs(freq_diff_t1))>0.1 &
+	rowMeans(freq_means_t1[,-c(1:2)]) > 0.05 &
+	rowMeans(freq_means_t1[,-c(1:2)]) < 0.95,]) #AF diff > 0.1
+
+## Store results with reverse variance filter applied plus AF mean filter (AF mean > 0.05 & < 0.95)
+varfilt_table[1,4] <- nrow(freq_diff_t1_revfilt[rowMeans(freq_means_t1_revfilt[,-c(1:2)]) > 0.05 &
+	rowMeans(freq_means_t1_revfilt[,-c(1:2)]) < 0.95,])  #all filtered out SNPs
+varfilt_table[2,4] <- nrow(freq_diff_t1_revfilt[rowMaxs(abs(freq_diff_t1_revfilt))>0.05 &
+	rowMeans(freq_means_t1_revfilt[,-c(1:2)]) > 0.05 &
+	rowMeans(freq_means_t1_revfilt[,-c(1:2)]) < 0.95,]) #AF diff > 0.05
+varfilt_table[3,4] <- nrow(freq_diff_t1_revfilt[rowMaxs(abs(freq_diff_t1_revfilt))>0.1 &
+	rowMeans(freq_means_t1_revfilt[,-c(1:2)]) > 0.05 &
+	rowMeans(freq_means_t1_revfilt[,-c(1:2)]) < 0.95,]) #AF diff > 0.1
+
+## Name rows and cols
+rownames(varfilt_table) <- c("total count","abs AF diff > 0.05","abs AF diff > 0.1")
+names(varfilt_table) <- c("Variance filt","Reverse filt","Variance filt + Af mean filt","Reverse filt + Af mean filt")
+
+## Save summary table
+write.table(varfilt_table, file="rudflies_2023_redo.variance_filter_test_table.txt", sep="\t", quote = FALSE, row.names = T)
+
+## Convert AF tables into data frames for plotting
+freq_diff_t1_df <- as.data.frame(freq_diff_t1)
+freq_diff_t1_revfilt_df <- as.data.frame(freq_diff_t1_revfilt)
+
+## Loop over treatment contrasts to make histograms
+for (x in 1:6) { #cycle through all contrasts
+	### Variance filter applied
+	## Pull temporal contrast from variance filtered table
+	templist <- as.data.frame(abs(freq_diff_t1_df))
+	names(templist)[x] <- "value"
+	assign(paste(names(freq_diff_t1_df)[x],".filt",sep=""), 
+		ggplot(templist, 
+	  		aes(value)) + 
+	  		geom_histogram(bins = 100) +
+	  		coord_cartesian(xlim = c(min(templist), max(templist))) +
+	  		xlab(paste("Variance filtered ",names(freq_diff_t1_df)[x],sep="")) +
+	  		theme_classic())
+	  		
+	### Reverse variance filter applied  		
+	## Pull temporal contrast from reverse filtered table
+	templist2 <- as.data.frame(abs(freq_diff_t1_revfilt_df))
+	names(templist2)[x] <- "value"
+	assign(paste(names(freq_diff_t1_revfilt_df)[x],".revfilt",sep=""), 
+		ggplot(templist2, 
+	  		aes(value)) + 
+	  		geom_histogram(bins = 100) +
+	  		coord_cartesian(xlim = c(min(templist), max(templist))) +
+	  		xlab(paste("Reverse variance filtered ",names(freq_diff_t1_revfilt_df)[x],sep="")) +
+	  		theme_classic())
+}
+
+### Plot all AF diff distributions together
+pdf(file = "rudflies_2023_redo.variance_filter_test_histograms.pdf", width=8, height=10)
+	ggarrange(EvSE.T1.diff.filt, 
+		EvSE.T1.diff.revfilt,
+		EvSP.T1.diff.filt,
+		EvSP.T1.diff.revfilt,
+		EvPA.T1.diff.filt,
+		EvPA.T1.diff.revfilt,
+		SEvPA.T1.diff.filt,
+		SEvPA.T1.diff.revfilt,
+		SPvPA.T1.diff.filt,
+		SPvPA.T1.diff.revfilt,
+		SEvSP.T1.diff.filt,
+		SEvSP.T1.diff.revfilt,
+        ncol = 2, nrow = 6)
+dev.off()
 
 
 ##########################################
