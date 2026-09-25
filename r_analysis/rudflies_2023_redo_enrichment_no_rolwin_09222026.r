@@ -217,7 +217,7 @@ for(i in 3:x) { #start after loci columns and append logp cols at the end of the
 glm.all.annot <- merge(glm.all, vep, by=c("CHROM","POS"))
 
 ## Load spinosad-resistance candidate gene list
-spino.cand <- read.table("spino.cand.list.txt", header=FALSE)
+spino.cand <- read.table("/data/lab/rudman/gp_analysis/rudflies_2023_redo/r/r_input/spino.cand.list.txt", header=FALSE)
 names(spino.cand) <- "Gene"
 
 ## Now merge to find All SNPs in and around candidate genes
