@@ -510,7 +510,7 @@ phyper_missense_spinoCand_FDR01[phyper_missense_spinoCand_FDR01[,2]<0.05,]
 ### Remake annotation stat summary lists for pvalues instead of fdr values ###
 
 ## Pull raw p-value columns only for spino candidates
-glm.all.pval.annot.spino <- unique(cbind(glm.all.annot.spino[,c(1:3)],Consequence=glm.all.annot.spino$Consequence,select(glm.all.annot.spino,contains("rolwin20"),-contains("fdr"),-contains("logp"))))
+glm.all.pval.annot.spino <- unique(cbind(glm.all.annot.spino[,c(1:3)],Consequence=glm.all.annot.spino$Consequence,select(glm.all.annot.spino,-contains("fdr"),-contains("logp"),-contains(colnames(vep)))))
 
 ## Loop through each GLM-results pval column to calculate spino candidate minimum values
 glm.all.pval.annot.spino.min <- c() # create an object
@@ -545,7 +545,7 @@ write.table(glm.all.pval.annot.spino.min, file="rudflies_2023_redo.glm.all.minpv
         	
         	
 ## Pull pval columns only for all genes/features
-glm.all.pval.annot <- unique(cbind(Gene=glm.all.annot$Gene,glm.all.annot[,c(1,2)],Consequence=glm.all.annot$Consequence,select(glm.all.annot,contains("rolwin20"),-contains("fdr"),-contains("logp"))))
+glm.all.pval.annot <- unique(cbind(Gene=glm.all.annot$Gene,glm.all.annot[,c(1,2)],Consequence=glm.all.annot$Consequence,select(glm.all.annot,-contains("fdr"),-contains("logp"),-contains(colnames(vep)))))
 glm.all.pval.annot <- na.omit(glm.all.pval.annot)
 
 ## Loop through each GLM-results pval column to calculate minimum values for all genes
@@ -605,7 +605,7 @@ glm.all.pval.annot.med <- merge(chrom.list, glm.all.pval.annot.med, by="Gene")
         	
         	
 ## Pull pval columns only for all genes/features, filtered for missense SNPs only
-glm.all.pval.annot.spino.missense <- unique(cbind(glm.all.annot.spino.missense[,c(1:3)],glm.all.annot.spino.missense$Consequence,select(glm.all.annot.spino.missense,contains("rolwin20"),-contains("fdr"),-contains("logp"))))
+glm.all.pval.annot.spino.missense <- unique(cbind(glm.all.annot.spino.missense[,c(1:3)],glm.all.annot.spino.missense$Consequence,select(glm.all.annot.spino.missense,-contains("fdr"),-contains("logp"),-contains(colnames(vep)))))
 
 ## Loop through each GLM-results pval column to calculate minimum values for all genes
 glm.all.pval.annot.spino.missense.min <- c() # create an object
