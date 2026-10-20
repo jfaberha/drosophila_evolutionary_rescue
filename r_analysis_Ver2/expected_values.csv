@@ -1,0 +1,183 @@
+module,key,expected,tolerance,reported_in
+02_build_glm_master,n_snps,1095839,0,SI 2.1.1; SI 2.1.2
+02_build_glm_master,PAvE_unsmoothed_fdr05,742162,0,SI 2.1.2
+02_build_glm_master,PAvE_unsmoothed_fdr01,650663,0,SI 2.1.2
+02_build_glm_master,SvE_unsmoothed_fdr05,225490,0,SI 2.1.2
+02_build_glm_master,SvE_unsmoothed_fdr01,128642,0,SI 2.1.2
+02_build_glm_master,PAvE_smoothed_fdr05,307042,0,SI 2.1.2
+02_build_glm_master,PAvE_smoothed_fdr01,134215,0,SI 2.1.2; main text (Fig. 2E)
+02_build_glm_master,SvE_smoothed_fdr05,23487,0,SI 2.1.2
+02_build_glm_master,SvE_smoothed_fdr01,4189,0,SI 2.1.2; main text (Fig. 2D)
+02_build_glm_master,pct3_PAvE_unsmoothed_min,56.6,0.05,SI 2.1.2 (range across FDR 0.05 / 0.01)
+02_build_glm_master,pct3_PAvE_unsmoothed_max,60.1,0.05,SI 2.1.2
+02_build_glm_master,pct3_SvE_unsmoothed_min,74.7,0.05,SI 2.1.2
+02_build_glm_master,pct3_SvE_unsmoothed_max,83.7,0.05,SI 2.1.2
+02_build_glm_master,pct3_PAvE_smoothed_min,79.4,0.05,SI 2.1.2
+02_build_glm_master,pct3_PAvE_smoothed_max,88.7,0.05,SI 2.1.2
+02_build_glm_master,pct3_SvE_smoothed_min,95.2,0.05,SI 2.1.2
+02_build_glm_master,pct3_SvE_smoothed_max,97.2,0.05,SI 2.1.2
+02_build_glm_master,EvSE.T1_smoothed_fdr05,619,0,main text (Fig. 3D); SI 2.3.1
+02_build_glm_master,EvSP.T1_smoothed_fdr05,0,0,main text (Fig. 3E)
+02_build_glm_master,EvSE.T1_unsmoothed_fdr05,32253,0,SI 2.3.2
+02_build_glm_master,EvSP.T1_unsmoothed_fdr05,134,0,SI 2.3.2
+02_build_glm_master,EvSE.T1_EvSP.T1_unsmoothed_overlap,4,0,SI 2.3.2
+02_build_glm_master,SvE.T4_smoothed_fdr05,4429,0,main text; SI 2.3.2
+03_genome_scans,Fig2F_P_candidate_genes,0.7767,0.0001,main text (Welch P = 0.78); SI 2.1.3 last paragraph
+03_genome_scans,Fig2G_P_candidate_genes,0.995,0.005,main text (Welch P > 0.99)
+03_genome_scans,Fig3G_mean_dp_extinct_outliers,0.18,0,main text (mean Δp = 0.18)
+03_genome_scans,Fig3G_mean_dp_matched,0.04,0,main text (vs. 0.04)
+03_genome_scans,Fig3G_P_below_2.2e-16,1,0,main text (P < 2.2 × 10−16)
+03_genome_scans,Fig3H_mean_dp_extinct_outliers,0.02,0,main text (mean Δp = 0.02)
+03_genome_scans,Fig3H_mean_dp_matched,0.02,0,main text (vs. 0.02)
+03_genome_scans,Fig3H_P,1,0.005,main text (P = 1.0)
+03_genome_scans,SI214_P_candidates_extinct,1,0.005,SI 2.1.4 (P = 1)
+03_genome_scans,SI214_P_candidates_rescued,0.1953,0.0001,SI 2.1.4 (P = 0.20)
+03_genome_scans,SI214_P_candidates_preadapted,1,0.005,SI 2.1.4 (P = 1)
+03_genome_scans,SI212_overlap,3727,0,SI 2.1.2 (3727 of 4189)
+03_genome_scans,SI212_log10P,-2814.5,0.1,SI 2.1.2 (P < 10^-300)
+04_rrho_spearman,rho_extinct_vs_preadapted,0.56,0,main text (ρ = 0.56)
+04_rrho_spearman,rho_rescued_vs_preadapted,0.14,0,main text (ρ = 0.14)
+05_convergent_candidates,Aug_extinct_outliers,619,0,main text; SI 2.3.1
+05_convergent_candidates,Aug_extinct_near,499,0,SI 2.3.1
+05_convergent_candidates,Aug_extinct_flycadd,76,0,SI 2.3.1
+05_convergent_candidates,Aug_rescued_outliers_unsmoothed,134,0,SI 2.3.2
+05_convergent_candidates,Aug_rescued_near,127,0,SI 2.3.2
+05_convergent_candidates,Aug_rescued_flycadd,14,0,SI 2.3.2
+05_convergent_candidates,Nov_rescued_outliers,4429,0,main text; SI 2.3.2
+05_convergent_candidates,Nov_rescued_near,3844,0,SI 2.3.2
+05_convergent_candidates,Nov_rescued_flycadd,517,0,SI 2.3.2
+05_convergent_candidates,Nov_same_direction_2456_found,1,0,main text (2456 also diverged in parallel in pre-adapted)
+05_convergent_candidates,Nov_convergent,441,0,main text; SI 2.3.2; Fig. 4D
+05_convergent_candidates,Nov_convergent_flycadd,81,0,main text; SI 2.3.2
+05_convergent_candidates,Nov_convergent_on_3L3R,438,0,SI 2.3.2 (438 of 441)
+05_convergent_candidates,Aug_convergent,359,0,SI 2.3.1
+05_convergent_candidates,Aug_convergent_flycadd,53,0,SI 2.3.1
+05_convergent_candidates,Aug_convergent_pct_3L3R,100,0,SI 2.3.1 (all on 3L and 3R)
+05_convergent_candidates,Relaxed_convergent,193,0,SI 2.3.3
+05_convergent_candidates,Relaxed_convergent_flycadd,26,0,SI 2.3.3
+05_convergent_candidates,Shared_Aug_Nov,17,0,SI 2.3.3
+05_convergent_candidates,Fig4D_snps_toward_preadapted,439,0,Fig. 4D (439 of 441)
+05_convergent_candidates,TableS7_rows,244,0,Table S7
+05_convergent_candidates,TableS10_rows,137,0,Table S10
+05_convergent_candidates,TableS11_rows,77,0,Table S11
+06_cage_scores_founder_axis,Fig3J_n_snps,428205,0,main text; Fig. 3J caption; SI 1.8.7
+06_cage_scores_founder_axis,Fig3J_extinct_mean,0.035,0,main text; SI 2.2.3
+06_cage_scores_founder_axis,Fig3J_rescued_mean,0.005,0,main text; SI 2.2.3
+06_cage_scores_founder_axis,Fig3J_preadapted_mean,0.088,0,main text; SI 2.2.3
+06_cage_scores_founder_axis,Fig3J_permutation_P,0.016,0,main text; SI 2.2.3
+06_cage_scores_founder_axis,SI223_extinct_min,0.015,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_extinct_max,0.059,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_rescued_min,-0.009,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_rescued_max,0.018,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_preadapted_min,0.074,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_preadapted_max,0.103,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_unexposed_min,-0.014,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_unexposed_max,0.018,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_extinct_above_unexposed,4,0,SI 2.2.3 (4 of 5)
+06_cage_scores_founder_axis,SI223_rescued_within_unexposed,5,0,SI 2.2.3 (all rescued)
+06_cage_scores_founder_axis,SI223_welch_t,3.2,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_welch_P,0.018,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_wilcoxon_P,0.016,0,SI 2.2.3
+06_cage_scores_founder_axis,SI223_permutations_larger,1,0,SI 2.2.3 (1 of 251)
+06_cage_scores_founder_axis,Fig4C_n_snps,222983,0,main text; Fig. 4C caption; SI 1.8.8
+06_cage_scores_founder_axis,Fig4C_rescued_Aug,-0.001,0,main text
+06_cage_scores_founder_axis,Fig4C_rescued_Sep,0.045,0,main text
+06_cage_scores_founder_axis,Fig4C_rescued_Oct,0.054,0,main text
+06_cage_scores_founder_axis,Fig4C_rescued_Nov,0.029,0,main text
+06_cage_scores_founder_axis,Fig4C_P_Aug,0.92,0,main text
+06_cage_scores_founder_axis,Fig4C_P_Sep,0.003,0,main text
+06_cage_scores_founder_axis,Fig4C_P_Oct,0.001,0,main text
+06_cage_scores_founder_axis,Fig4C_P_Nov,0.03,0,main text
+06_cage_scores_founder_axis,Fig4C_extinct_Aug,0.055,0,main text
+06_cage_scores_founder_axis,Fig4C_extinct_Aug_P,0.003,0,main text
+07_concordance_LOO,clusters_EvSE.T1,130,0,SI 2.4 (all-sample clusters; extinct August)
+07_concordance_LOO,clusters_EvSP.T1,34,0,SI 2.4 (all-sample clusters; rescued August)
+07_concordance_LOO,clusters_EvSP.T4,375,0,SI 2.4 (all-sample clusters; rescued November)
+07_concordance_LOO,LOO_EvSE.T1_min,145,0,SI 2.4 (leave-one-out clusters 145-187)
+07_concordance_LOO,LOO_EvSE.T1_max,187,0,SI 2.4 (leave-one-out clusters 145-187)
+07_concordance_LOO,LOO_EvSP.T1_min,62,0,SI 2.4 (leave-one-out clusters 62-148)
+07_concordance_LOO,LOO_EvSP.T1_max,148,0,SI 2.4 (leave-one-out clusters 62-148)
+07_concordance_LOO,LOO_EvSP.T4_min,368,0,SI 2.4 (leave-one-out clusters 368-385)
+07_concordance_LOO,LOO_EvSP.T4_max,385,0,SI 2.4 (leave-one-out clusters 368-385)
+07_concordance_LOO,S3_SET1clust_median_t,6.06,0.005,main text; Table S3
+07_concordance_LOO,S3_SET1clust_median_P,2.37e-09,5e-12,main text; Table S3
+07_concordance_LOO,S3_SPT1clust_median_t,0.85,0.005,Table S3; SI 2.4.1
+07_concordance_LOO,S3_SPT1clust_median_P,0.201,0.0005,Table S3; SI 2.4.1
+07_concordance_LOO,S3_SPT4clust_median_t,0.68,0.005,Table S3; SI 2.4.1
+07_concordance_LOO,S3_SPT4clust_median_P,0.249,0.0005,Table S3; SI 2.4.1
+07_concordance_LOO,S4_SET1clust_median_t,2.84,0.005,Table S4; SI 2.4.2
+07_concordance_LOO,S4_SET1clust_median_P,0.00246,5e-06,Table S4; SI 2.4.2
+07_concordance_LOO,S4_SPT1clust_median_t,2.82,0.005,main text; Table S4
+07_concordance_LOO,S4_SPT1clust_median_P,0.00309,5e-06,main text; Table S4
+07_concordance_LOO,S4_SPT4clust_median_t,0.85,0.005,Table S4; SI 2.4.2
+07_concordance_LOO,S4_SPT4clust_median_P,0.198,0.0005,Table S4; SI 2.4.2
+07_concordance_LOO,S6_SET1clust_median_t,1.62,0.005,Table S6; SI 2.4.3
+07_concordance_LOO,S6_SET1clust_median_P,0.0533,5e-05,Table S6; SI 2.4.3
+07_concordance_LOO,S6_SPT1clust_median_t,-0.06,0.005,Table S6; SI 2.4.3
+07_concordance_LOO,S6_SPT1clust_median_P,0.523,0.0005,Table S6; SI 2.4.3
+07_concordance_LOO,S6_SPT4clust_median_t,5.3,0.005,main text; Table S6
+07_concordance_LOO,S6_SPT4clust_median_P,7.65e-08,5e-11,main text; Table S6
+07_concordance_LOO,TableS3_matches_published,1,0,Table S3 (every cell)
+07_concordance_LOO,TableS4_matches_published,1,0,Table S4 (every cell)
+07_concordance_LOO,TableS6_matches_published,1,0,Table S6 (every cell)
+07_concordance_LOO,FigS9_n_snps,441,0,Fig. S9 caption (November convergent candidates)
+08_candidate_genes,SI213_PAvE_FDR01_genes,36,0,SI 2.1.3
+08_candidate_genes,SI213_PAvE_FDR01_P,0.1058,0.0001,SI 2.1.3
+08_candidate_genes,SI213_SvE_missense_FDR05_genes,3,0,SI 2.1.3
+08_candidate_genes,SI213_SvE_missense_FDR05_P,0.1704,0.0001,SI 2.1.3
+08_candidate_genes,SI213_SvE_FDR01_genes,3,0,SI 2.1.3
+08_candidate_genes,SI213_SvE_FDR05_genes,14,0,SI 2.1.3
+08_candidate_genes,SI213_SvE_T1toT3_FDR05_genes,0,0,SI 2.1.3
+08_candidate_genes,SI213_SvE_T4_FDR05_genes,6,0,SI 2.1.3
+08_candidate_genes,SI213_wilcox_mean_PAvE,0.4344,0.0001,SI 2.1.3
+08_candidate_genes,SI213_wilcox_mean_SvE,0.3973,0.0001,SI 2.1.3
+08_candidate_genes,SI213_wilcox_pctsig_PAvE,0.2,0,SI 2.1.3
+08_candidate_genes,SI213_wilcox_pctsig_SvE,0.7,0,SI 2.1.3
+08_candidate_genes,SI213_unsmoothed_SvE_FDR01_genes,45,0,SI 2.1.3
+08_candidate_genes,SI213_unsmoothed_SvE_FDR01_P,0.3985,0.0001,SI 2.1.3
+08_candidate_genes,SI213_unsmoothed_PAvE_FDR01_genes,57,0,SI 2.1.3
+08_candidate_genes,SI213_unsmoothed_PAvE_FDR01_P,0.6833,0.0001,SI 2.1.3
+08_candidate_genes,SI214_lowest_P_August,0.3009,0.0001,SI 2.1.4
+08_candidate_genes,SI214_wilcox_mean_EvSE.T1,0.4169,0.0001,SI 2.1.4
+08_candidate_genes,SI214_wilcox_mean_EvSP.T1,0.4637,0.0001,SI 2.1.4
+08_candidate_genes,SI214_wilcox_mean_EvPA.T1,0.6292,0.0001,SI 2.1.4
+08_candidate_genes,SI214_wilcox_max_pctsig_August,0.6,0,SI 2.1.4
+08_candidate_genes,SI214_unsmoothed_lowest_P_August,0.0414,0.0001,SI 2.1.4
+08_candidate_genes,SI186_candidate_SNPs,10705,0,SI 1.8.6
+08_candidate_genes,SI186_candidate_SNPs_noflank,4982,0,SI 1.8.6
+08_candidate_genes,SI186_candidate_missense_SNPs,120,0,SI 1.8.6
+08_candidate_genes,SI214_unsmoothed_EvSE.T1_SNPs,183,0,SI 2.1.4
+08_candidate_genes,SI214_unsmoothed_EvSE.T1_genes,9,0,SI 2.1.4
+08_candidate_genes,SI214_unsmoothed_EvSP.T1_SNPs,1,0,SI 2.1.4
+08_candidate_genes,SI214_unsmoothed_EvSP.T1_genes,1,0,SI 2.1.4
+08_candidate_genes,SI214_unsmoothed_EvPA.T1_SNPs,2480,0,SI 2.1.4
+08_candidate_genes,SI214_unsmoothed_EvPA.T1_genes,54,0,SI 2.1.4
+08_candidate_genes,SI214_unsmoothed_candidate_genes_in_data,57,0,SI 2.1.4
+09_GO_enrichment,TableS8_rows_T1SE,17,0,Table S8 (August extinct list)
+09_GO_enrichment,TableS8_rows_T4SP,8,0,Table S8 (November rescued list)
+09_GO_enrichment,TableS8_rows_T1T4,1,0,Table S8 (relaxed three-way list)
+09_GO_enrichment,TableS8_matches_published,1,0,Table S8 (every cell)
+10_cost_temporal,TableS1_matches_published,1,0,Table S1 (every cell)
+10_cost_temporal,TableS9_matches_published,1,0,Table S9 (every cell)
+10_cost_temporal,TableS12_matches_published,1,0,Table S12 (every cell)
+10_cost_temporal,TableS13_matches_published,1,0,Table S13 (every cell)
+10_cost_temporal,S9_T2vT4_nonadaptive_m,8761,0,main text (59.2% of 8761)
+10_cost_temporal,S9_T2vT4_nonadaptive_pct,59.2,0,main text
+10_cost_temporal,S9_T2vT4_adaptive_m,3586,0,main text (25.3% of 3586)
+10_cost_temporal,S9_T2vT4_adaptive_pct,25.3,0,main text
+10_cost_temporal,S1_T2vT4_nonadaptive_P,9.8e-18,1e-19,main text
+10_cost_temporal,S12_PA_rho_min,-0.31,0,SI 2.5.2
+10_cost_temporal,S12_PA_rho_max,-0.13,0,SI 2.5.2
+10_cost_temporal,S12_E_rho_min_neg,-0.04,0,SI 2.5.2
+10_cost_temporal,S12_E_rho_max_neg,-0.2,0,SI 2.5.2
+10_cost_temporal,FigS13_n_min,9977,0,Fig. S13 caption
+10_cost_temporal,FigS13_n_max,10000,0,Fig. S13 caption
+11_hafpipe_validation,n_hafpipe_variants,3231230,0,SI 2.1.1 (3.23 million variants)
+11_hafpipe_validation,R_dgrp2_vs_bcftools,0.86,0.005,SI 1.7; Fig. S14 caption
+11_hafpipe_validation,R_dgrp2_vs_hafpipe,0.90,0.005,SI 1.7; Fig. S14 caption
+12_diversity_theta,S5_genome_SEvSP_500x,0.9549,0.0001,Table S5; SI 2.2.1 (extinct vs rescued)
+12_diversity_theta,S5_genome_SEvSP_3500x,0.9332,0.0001,Table S5; SI 2.2.1 (extinct vs rescued)
+12_diversity_theta,S5_genome_EvPA_500x,3.472e-06,1e-09,Table S5 (pre-adapted vs unexposed)
+12_diversity_theta,S5_genome_EvPA_3500x,3.903e-07,1e-10,Table S5 (pre-adapted vs unexposed)
+12_diversity_theta,S5_min_SEvSP,0.8561,0.0001,SI 2.2.1 (extinct vs rescued; lowest across chromosomes and coverages)
+12_diversity_theta,S5_lowest_P,1.567e-11,1e-14,Table S5 (lowest P)
