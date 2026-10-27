@@ -9,7 +9,7 @@
 ###  In this file: 08_candidate_genes.R — are the a priori spinosad candidate genes (Table S2) enriched among GLM outliers?
 ###  Outputs:
 ###  SI 1.8.6   SNP counts in candidate-gene regions
-###  SI 2.1.3   hypergeometric overlap tests (all time points; all / missense SNPs; FDR < 0.05 / 0.01) and Wilcoxon rank-sum tests vs matched genes      ###
+###  SI 2.1.4   hypergeometric overlap tests (all time points; all / missense SNPs; FDR < 0.05 / 0.01) and Wilcoxon rank-sum tests vs matched genes      ###
 ###  SI 2.1.4   the same for the August contrasts, and unsmoothed counts (Fig. S4) (the 21-SNP-window ['smoothed'] and unsmoothed versions of the hypergeometric tests; Wilcoxon on the smoothed values, as in the text)
 
 ###  Each gene's minimum FDR (and P) across its SNPs is taken numerically and compared with the threshold.

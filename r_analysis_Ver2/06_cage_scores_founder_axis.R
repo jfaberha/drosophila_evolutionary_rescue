@@ -9,7 +9,7 @@
 ###  In this file: 06_cage_scores_founder_axis.R — how far each population moved toward the pre-adapted genomic state.
 
 ###  Produces:
-###  Fig. 3J / SI 2.2.3 (SI 1.8.7)  August cages scored on the pre-adapted axis: SNPs with pre-adapted vs unexposed GLM FDR < 0.01 in November; pre-adapted-biased allele from September-November means; score = mean signed difference from the August unexposed mean (unexposed cages vs the other unexposed cages). Extinct vs rescued: exact permutation over all 252 splits, Welch, Wilcoxon.
+###  Fig. 3J / SI 2.2.2 (SI 1.8.7)  August cages scored on the pre-adapted axis: SNPs with pre-adapted vs unexposed GLM FDR < 0.01 in November; direction of pre-adapted allelic change from September-November means; score = mean signed difference from the August unexposed mean (unexposed cages vs the other unexposed cages). Extinct vs rescued: exact permutation over all 252 splits, Welch, Wilcoxon.
 ###  Fig. 4C (SI 1.8.8)  every field population, August-November, scored on the founder axis: SNPs differing by > 0.1 between pre-adapted and unexposed founders with complete separation of technical replicates; each time point scored against the unexposed mean at that time point. Rescued vs unexposed at each time point and extinct vs unexposed in August: exact permutation tests.
 
 ########################################
@@ -56,16 +56,15 @@ fig3j <- data.frame(n_loci = sum(sel), extinct_mean = mean(ex), extinct_min = mi
 	rescued_mean = mean(re), rescued_min = min(re), rescued_max = max(re), preadapted_mean = mean(pa), preadapted_min = min(pa), preadapted_max = max(pa),
 	unexposed_min = min(un), unexposed_max = max(un), extinct_above_unexposed_range = sum(ex > max(un)), rescued_within_unexposed_range = sum(re >= min(un) & re <= max(un)),
 	permutation_P = pt[["P_two_sided"]], permutation_n_larger = pt[["n_larger"]], welch_t = unname(wt$statistic), welch_P = wt$p.value, wilcoxon_P = wx$p.value)
-cat("\n===== Fig. 3J / SI 2.2.3 =====\n"); print(t(round(fig3j, 4)))
+cat("\n===== Fig. 3J / SI 2.2.2 =====\n"); print(t(round(fig3j, 4)))
 write.csv(cs, "Fig3J_cage_scores.csv", row.names = FALSE); write.csv(fig3j, "Fig3J_tests.csv", row.names = FALSE)
 
 cols <- c("unexposed" = "#79B998", "rescued" = "#EBBE45", "extinct" = "#1C1C1C", "pre-adapted" = "#5B397D")
 d <- cs[cs$group != "other", ]; d$group <- factor(d$group, levels = names(cols))
-band <- data.frame(lo = min(un), hi = max(un)); mns <- aggregate(score ~ group, d, mean)
+mns <- aggregate(score ~ group, d, mean)
 top <- max(d$score[d$group %in% c("rescued", "extinct")]); span <- diff(range(d$score))
 set.seed(1)
 p3j <- ggplot(d, aes(x = group, y = score)) +
-	geom_rect(data = band, aes(xmin = -Inf, xmax = Inf, ymin = lo, ymax = hi), inherit.aes = FALSE, fill = "#79B998", alpha = 0.18) +
 	geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.4, colour = "grey40") +
 	geom_crossbar(data = mns, aes(ymin = score, ymax = score), width = 0.5, linewidth = 0.4, colour = "grey20") +
 	geom_jitter(aes(fill = group), shape = 21, size = 3, width = 0.12, height = 0, colour = "white", stroke = 0.4) +
@@ -133,7 +132,7 @@ p4c <- ggplot(x, aes(x = x, y = score)) +
 	geom_text(data = sg, aes(x = x, y = y, label = label), inherit.aes = FALSE, size = 4) +
 	scale_fill_manual(values = cols, name = NULL) + scale_colour_manual(values = cols, guide = "none") +
 	scale_x_continuous(breaks = 1:4, labels = months, limits = c(0.75, 4.35)) +
-	labs(x = NULL, y = expression(paste("shift toward pre-adapted-biased alleles (", Delta, italic(p), ")"))) +
+	labs(x = NULL, y = expression(paste("shift in the direction of pre-adapted allelic change (", Delta, italic(p), ")"))) +
 	theme_classic(base_size = 12) + theme(legend.position = "top") +
 	ggtitle(paste0("Founder axis (", format(length(selF), big.mark = ","), " SNPs)")) + theme(plot.title = element_text(size = 11, face = "bold"))
 ggsave("Fig4C_founder_axis_trajectory.pdf", p4c, width = 5.2, height = 4.6)

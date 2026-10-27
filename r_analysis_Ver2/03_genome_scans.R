@@ -11,12 +11,12 @@
 ###  Produces:
 ###  Fig. 2D-E  smoothed Manhattans, all time points (exposed; pre-adapted)
 ###  Fig. S3    the same without smoothing
-###  Fig. 2F-G  |Δp| at spinosad candidate SNPs and 'exposed vs unexposed' outliers vs matched background SNPs (Welch tests: main text; SI 2.1.3)
+###  Fig. 2F-G  |Δp| at spinosad candidate SNPs and 'exposed vs unexposed' outliers vs matched background SNPs (Welch tests: main text; SI 2.1.4)
 ###  Fig. 3D-F  smoothed August Manhattans (extinct; rescued; pre-adapted)
 ###  Fig. S8    the same without smoothing
 ###  Fig. S4    unsmoothed August Manhattans highlighting candidate-gene SNPs
 ###  Fig. 3G-I  August |Δp| at outliers vs matched SNPs (main text; SI 2.1.4)
-###  SI 2.1.2   hypergeometric overlap of exposed and pre-adapted outliers
+###  SI 2.1.3   hypergeometric overlap of exposed and pre-adapted outliers
 
 ########################################
 
@@ -116,7 +116,7 @@ save_panels("Fig3DF_manhattan_August_rolwin21.pdf", list(r3a, r3b, r3c), width =
 msg("Manhattan plots written")
 
 ## ======================================================================================
-## SI 2.1.2: overlap of 'exposed vs unexposed' and 'pre-adapted vs unexposed' outliers
+## SI 2.1.3: overlap of 'exposed vs unexposed' and 'pre-adapted vs unexposed' outliers
 ## ======================================================================================
 hyp <- function(d, a, b, thr, label) {
 	d <- d[!is.na(d[[a]]) & !is.na(d[[b]]), ]
@@ -128,7 +128,7 @@ hyp <- function(d, a, b, thr, label) {
 }
 ov <- rbind(hyp(glm.all.rolwin21, "SvE.fdr.rolwin21", "PAvE.fdr.rolwin21", 0.01, "exposed (A) vs pre-adapted (B), all time points, 21-SNP windows, FDR<0.01"),
 	hyp(glm.all, "SvE.fdr", "PAvE.fdr", 0.01, "exposed (A) vs pre-adapted (B), all time points, unsmoothed, FDR<0.01"))
-cat("\n===== SI 2.1.2 hypergeometric overlap =====\n"); print(ov, row.names = FALSE)
+cat("\n===== SI 2.1.3 hypergeometric overlap =====\n"); print(ov, row.names = FALSE)
 write.csv(ov, "SI2.1.2_overlap_hypergeometric.csv", row.names = FALSE)
 
 ## ======================================================================================

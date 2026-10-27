@@ -12,7 +12,7 @@
 ###  Tables S1 / S9  hypergeometric overlap of parallel temporal-change SNPs (8 of 9 unexposed cages / 9 of 10 pre-adapted cages, > 3%) with August 'pre-adapted vs unexposed' outliers, in each direction
 ###  Table S12 Spearman correlations of sign-corrected -log10(P), temporal contrasts vs August 'pre-adapted vs unexposed'
 ###  Table S13 top-10K outliers of four focal contrasts vs matched SNPs (signed -log10(P) in each temporal contrast; 100 iterations)
-###  Fig. S13 direction of change of the top-10K SNPs in pre-adapted populations
+###  Fig. S12 direction of change of the top-10K SNPs in pre-adapted populations
 
 ########################################
 
@@ -94,8 +94,8 @@ tabs <- list(S12 = data.frame(`temporal contrast` = s12$temporal_contrast, `pre-
 ##########################################################################################
 ## 3. Tables S1 and S9: parallel temporal change vs August pre-adapted outliers        ##
 ##    A SNP changes in parallel if its sign-corrected change is > 3% in all but one     ##
-##    cage (second-lowest value > 0.03: toward the pre-adapted-biased allele;           ##
-##    second-highest < -0.03: toward the unexposed-biased allele)                       ##
+##    cage (second-lowest value > 0.03: direction of pre-adapted allelic change;        ##
+##    second-highest < -0.03: direction of unexposed allelic change)                    ##
 ##########################################################################################
 pa_sign <- (mn(tf == "PA" & tp == "1") - mn(tf == "E" & tp == "1")) / abs(mn(tf == "PA" & tp == "1") - mn(tf == "E" & tp == "1"))
 one_af <- function(g, t, c) {      # one population's frequencies; NA if that sample does not exist
@@ -131,7 +131,7 @@ fp <- function(p) ifelse(p == 0, "0", ifelse(p < 0.001, sub("e", "E", sprintf("%
 lab <- setNames(sub("v", " vs. ", TC), TC)
 hyp_table <- function(r) {
 	r <- r[order(match(r$direction, c("positive", "negative")), match(r$temporal, TC)), ]
-	data.frame(contrast = lab[r$temporal], direction = ifelse(r$direction == "positive", "adaptive", "non-adaptive"), overlap = r$q,
+	data.frame(contrast = lab[r$temporal], direction = ifelse(r$direction == "positive", "pre-adapted", "unexposed"), overlap = r$q,
 		`temporal outliers` = r$m, `non-temporal outliers` = r$n, `PAvE.T1 outliers` = r$k, `hypergeometric P-value` = fp(r$P), check.names = FALSE, row.names = NULL)
 }
 msg("Temporal tests: unexposed (8 of 9 cages; 7 of 8 for September) and pre-adapted (9 of 10 cages) ...")
@@ -142,7 +142,7 @@ tabs$S1 <- hyp_table(rE); tabs$S9 <- hyp_table(rPA)
 
 ##########################################################################################
 ## 4. Table S13: top-10K SNPs vs matched SNPs (signed -log10(P) in temporal contrasts)  ##
-##    and Fig. S13 direction counts                                                    ##
+##    and Fig. S12 direction counts                                                    ##
 ##########################################################################################
 vep <- load_vep()
 vep_priority <- vep_priority_table(glm.all, vep, Fmean); rm(vep); invisible(gc())
@@ -199,7 +199,7 @@ tabs$S13 <- do.call(rbind, lapply(c("PAvE.T1", "EvSE.T1", "EvSP.T1", "EvSP.T4"),
 
 names(tabs$S13) <- sub("-log10", paste0(intToUtf8(0x2212), "log10"), names(tabs$S13), fixed = TRUE)   # minus sign as in the SI table
 
-## Fig. S13: direction of temporal change at the top 1K / 10K SNPs, re-oriented to the focal contrast
+## Fig. S12: direction of temporal change at the top 1K / 10K SNPs, re-oriented to the focal contrast
 counts <- list()
 for (sn in c("PAvE.T1", "EvSE.T1", "EvSP.T1", "EvSP.T4")) for (N in c(`1K` = 1000, `10K` = 10000)) {
 	s <- SETS[[sn]]
@@ -207,7 +207,7 @@ for (sn in c("PAvE.T1", "EvSE.T1", "EvSP.T1", "EvSP.T4")) for (N in c(`1K` = 100
 	for (cc in tcols) {
 		rel <- st[[paste0(cc, ".diff")]] * st[[s$dsign]]
 		counts[[length(counts) + 1]] <- data.frame(SNP_set = sn, top_n = if (N == 1000) "1K" else "10K", n_SNPs = nrow(st), contrast = cc,
-			E_biased = sum(rel == -1, na.rm = TRUE), exposed_biased = sum(rel == 1, na.rm = TRUE), exposed_label = paste0(s$label, "-biased"))
+			toward_unexposed = sum(rel == -1, na.rm = TRUE), toward_exposed = sum(rel == 1, na.rm = TRUE), exposed_group = s$label)
 	}
 }
 counts <- do.call(rbind, counts)
@@ -215,16 +215,16 @@ write.table(counts, "temporal_signed_counts_top1K_top10K.txt", sep = "\t", quote
 cnt <- counts[counts$top_n == "10K" & grepl("^PA\\.", counts$contrast), ]
 sets <- c("PAvE.T1", "EvSE.T1", "EvSP.T1", "EvSP.T4")
 titles <- c("pre-adapted vs. unexposed (Aug)", "extinct vs. unexposed (Aug)", "rescued vs. unexposed (Aug)", "rescued vs. unexposed (Nov)")
-exposed_fill <- c("toward pre-adapted-biased allele", "toward extinct-biased allele", "toward rescued-biased allele", "toward rescued-biased allele")
+exposed_fill <- c("direction of pre-adapted allelic change", "direction of extinct allelic change", "direction of rescued allelic change", "direction of rescued allelic change")
 intervals <- c(PA.T1vT2 = "Aug-Sep", PA.T1vT3 = "Aug-Oct", PA.T1vT4 = "Aug-Nov", PA.T2vT3 = "Sep-Oct", PA.T2vT4 = "Sep-Nov", PA.T3vT4 = "Oct-Nov")
 long <- do.call(rbind, lapply(seq_along(sets), function(i) {
 	x <- cnt[cnt$SNP_set == sets[i], ]
-	rbind(data.frame(panel = titles[i], interval = intervals[x$contrast], n = x$E_biased, direction = "toward unexposed-biased allele"),
-		data.frame(panel = titles[i], interval = intervals[x$contrast], n = x$exposed_biased, direction = exposed_fill[i]))
+	rbind(data.frame(panel = titles[i], interval = intervals[x$contrast], n = x$toward_unexposed, direction = "direction of unexposed allelic change"),
+		data.frame(panel = titles[i], interval = intervals[x$contrast], n = x$toward_exposed, direction = exposed_fill[i]))
 }))
 long$panel <- factor(long$panel, levels = titles); long$interval <- factor(long$interval, levels = intervals)
-long$direction <- factor(long$direction, levels = c("toward unexposed-biased allele", "toward pre-adapted-biased allele", "toward extinct-biased allele", "toward rescued-biased allele"))
-fills <- c("toward unexposed-biased allele" = "#79B998", "toward pre-adapted-biased allele" = "#5B397D", "toward extinct-biased allele" = "#1C1C1C", "toward rescued-biased allele" = "#EBBE45")
+long$direction <- factor(long$direction, levels = c("direction of unexposed allelic change", "direction of pre-adapted allelic change", "direction of extinct allelic change", "direction of rescued allelic change"))
+fills <- c("direction of unexposed allelic change" = "#79B998", "direction of pre-adapted allelic change" = "#5B397D", "direction of extinct allelic change" = "#1C1C1C", "direction of rescued allelic change" = "#EBBE45")
 letters_df <- data.frame(panel = factor(titles, levels = titles), label = c("A", "B", "C", "D"))
 p <- ggplot(long, aes(x = interval, y = n, fill = direction)) + geom_col(width = 0.7) +
 	geom_hline(yintercept = 5000, linetype = "dashed", linewidth = 0.6) +
@@ -235,7 +235,7 @@ p <- ggplot(long, aes(x = interval, y = n, fill = direction)) + geom_col(width =
 	guides(fill = guide_legend(nrow = 1, title.position = "top")) + theme_classic(base_size = 13) +
 	theme(legend.position = "top", legend.justification = "left", legend.title = element_text(face = "bold"),
 		strip.background = element_blank(), strip.text = element_text(face = "bold", size = 13), axis.text.x = element_text(angle = 30, hjust = 1))
-ggsave("FigS13.pdf", p, width = 16, height = 6)
+ggsave("FigS12.pdf", p, width = 16, height = 6)
 
 ##########################################################################################
 ## 5. Tables, comparison with the published tables, checks                             ##
@@ -258,13 +258,13 @@ for (n in names(tabs)) {
 	obs[paste0("Table", n, "_matches_published")] <- as.numeric(same)
 }
 x <- rPA[rPA$temporal == "T2vT4", ]
-obs["S9_T2vT4_nonadaptive_m"] <- x$m[x$direction == "negative"]; obs["S9_T2vT4_nonadaptive_pct"] <- round(100 * x$q[x$direction == "negative"] / x$m[x$direction == "negative"], 1)
-obs["S9_T2vT4_adaptive_m"] <- x$m[x$direction == "positive"]; obs["S9_T2vT4_adaptive_pct"] <- round(100 * x$q[x$direction == "positive"] / x$m[x$direction == "positive"], 1)
-obs["S1_T2vT4_nonadaptive_P"] <- signif(rE$P[rE$temporal == "T2vT4" & rE$direction == "negative"], 2)
+obs["S9_T2vT4_towardE_m"] <- x$m[x$direction == "negative"]; obs["S9_T2vT4_towardE_pct"] <- round(100 * x$q[x$direction == "negative"] / x$m[x$direction == "negative"], 1)
+obs["S9_T2vT4_towardPA_m"] <- x$m[x$direction == "positive"]; obs["S9_T2vT4_towardPA_pct"] <- round(100 * x$q[x$direction == "positive"] / x$m[x$direction == "positive"], 1)
+obs["S1_T2vT4_towardE_P"] <- signif(rE$P[rE$temporal == "T2vT4" & rE$direction == "negative"], 2)
 obs["S12_PA_rho_min"] <- round(min(s12$PA_rho), 2); obs["S12_PA_rho_max"] <- round(max(s12$PA_rho), 2)
 obs["S12_E_rho_min_neg"] <- round(max(s12$E_rho[s12$E_rho < 0]), 2); obs["S12_E_rho_max_neg"] <- round(min(s12$E_rho), 2)
 n10 <- unique(counts[counts$top_n == "10K", c("SNP_set", "n_SNPs")])
-obs["FigS13_n_min"] <- min(n10$n_SNPs); obs["FigS13_n_max"] <- max(n10$n_SNPs)
+obs["FigS12_n_min"] <- min(n10$n_SNPs); obs["FigS12_n_max"] <- max(n10$n_SNPs)
 ok <- check_expected("10_cost_temporal", obs)
 sink()
 if (!ok) quit(status = 1)

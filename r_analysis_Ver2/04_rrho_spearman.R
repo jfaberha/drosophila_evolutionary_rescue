@@ -10,9 +10,9 @@
 
 ###  Produces:
 ###  Main text Spearman ρ: extinct vs pre-adapted (0.56); rescued vs pre-adapted (0.14), each relative to unexposed
-###  Fig. S11B   RRHO extinct vs rescued
-###  Fig. S11C   RRHO extinct vs pre-adapted
-###  Fig. S11D   RRHO rescued vs pre-adapted
+###  Fig. S10B   RRHO extinct vs rescued
+###  Fig. S10C   RRHO extinct vs pre-adapted
+###  Fig. S10D   RRHO rescued vs pre-adapted
 
 ### Additional notes: Signed -log10(P) = -log10(P) x sign of the unexposed-minus-treatment frequency difference, from the August four-group GLM; SNPs with P = 0 in any contrast removed; SNPs with mean August frequency outside 0.15-0.85 removed. Spearman uses all remaining SNPs; RRHO uses a random 25,000 (seeded). Colour scales of all panels share the maximum of the extinct-vs-pre-adapted plot, as in the original. Not carried over (unused in the paper): 'rescued vs extinct' vs pre-adapted comparison and the time-series RRHOs for September-November.
 
@@ -61,9 +61,9 @@ r_SE_PA <- RRHO2_initialize(EvSE, EvPA, labels = c("EvSE.T1", "EvPA.T1"), log10.
 mx <- max(na.omit(r_SE_PA$hypermat[is.finite(r_SE_PA$hypermat)]))   # common colour maximum
 r_SP_PA <- RRHO2_initialize(EvSP, EvPA, labels = c("EvSP.T1", "EvPA.T1"), log10.ind = TRUE)
 r_SE_SP <- RRHO2_initialize(EvSE, EvSP, labels = c("EvSE.T1", "EvSP.T1"), log10.ind = TRUE)
-for (x in list(list(r_SE_SP, "FigS11B_RRHO_extinct_vs_rescued_August.pdf"),
-	list(r_SE_PA, "FigS11C_RRHO_extinct_vs_preadapted_August.pdf"),
-	list(r_SP_PA, "FigS11D_RRHO_rescued_vs_preadapted_August.pdf"))) {
+for (x in list(list(r_SE_SP, "FigS10B_RRHO_extinct_vs_rescued_August.pdf"),
+	list(r_SE_PA, "FigS10C_RRHO_extinct_vs_preadapted_August.pdf"),
+	list(r_SP_PA, "FigS10D_RRHO_rescued_vs_preadapted_August.pdf"))) {
 	pdf(x[[2]], width = 6, height = 5.5); RRHO2_heatmap(x[[1]], maximum = mx, colorGradient = rrho_shades); dev.off()
 }
 msg("RRHO plots written (common colour maximum = %.1f)", mx)

@@ -13,7 +13,7 @@
 
 ###  Outputs:
 ###  Tables S3, S4, S6   concordance t-tests (extinct Aug; rescued Aug; rescued Nov)
-###  SI 2.4              cluster counts (all-sample GLMs) and leave-one-out ranges
+###  SI 1.8.11, 2.4       cluster counts (all-sample GLMs) and leave-one-out ranges
 ###  Fig. S9             Euclidean distances among August populations at the 441 November convergent candidate SNPs (from module 05)
 
 ########################################
@@ -25,8 +25,7 @@ suppressMessages({ library(dplyr); library(ggplot2) })
 OUT <- module_dir("07_concordance_LOO"); setwd(OUT)
 sink("07_concordance_LOO_report.txt", split = TRUE)
 dir.create("clusters", FALSE); dir.create("ttests", FALSE)
-FIX <- toupper(Sys.getenv("RF_FIX_SCORE_PAIRING", "FALSE")) == "TRUE"
-if (FIX) cat("*** RF_FIX_SCORE_PAIRING=TRUE: scores use matching columns; results will NOT match the paper ***\n")
+SIG <- 2   # minimum score for a significant SNP
 rd <- function(f) read.table(file.path(PATHS$glm_tables, f), header = TRUE)
 CHRS <- c("2L", "2R", "3L", "3R", "X")
 N_ITER <- 100
@@ -201,13 +200,14 @@ msg("SNPs with a consequence for matching: %s", format(nrow(vep_priority), big.m
 ##########################################################################################
 ## 3. Cluster helpers (501-SNP windows, 100-SNP steps)                                 ##
 ##########################################################################################
-## Score 0-6 from FDR and |delta p| (Rudman et al. 2022)
-score_of <- function(fdr, dp, six_on_score = FALSE) {
+## Score 0-3 from FDR and |delta p| (Rudman et al. 2022): 0 FDR > 0.2 and |delta p| <= 0.02;
+## 1 FDR < 0.2 or |delta p| > 0.02; 2 FDR < 0.05 and |delta p| > 0.02; 3 FDR < 0.01 and |delta p| > 0.02
+score_of <- function(fdr, dp) {
 	s <- rep(NA_real_, length(fdr))
 	s[which(fdr > 0.2)] <- 0
 	s[which(fdr < 0.2 | (fdr > 0.2 & dp > 0.02))] <- 1
-	for (k in 2:5) s[which(fdr < c(0.05, 0.01, 0.001, 1e-4)[k - 1] & dp > 0.02)] <- k
-	s[which(fdr < 1e-5 & (if (six_on_score) s else dp) > 0.02)] <- 6
+	s[which(fdr < 0.05 & dp > 0.02)] <- 2
+	s[which(fdr < 0.01 & dp > 0.02)] <- 3
 	s
 }
 ## Shuffle loci within chromosomes (one sample() per chromosome)
@@ -275,13 +275,13 @@ make_clusters <- function(sc, cols, loci, prefix) {
 		tt <- window_tests(tr, rb, cc)
 		nm <- file.path("clusters", paste0(prefix, "_", sub("\\.score$", "", cc)))
 		write.table(tt, paste0(nm, "_window_ttests.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
-		iv <- reduce_iv(tt[tt$fdr < 0.05 & tt$max_score >= 2, ])
+		iv <- reduce_iv(tt[tt$fdr < 0.05 & tt$max_score >= SIG, ])
 		write.table(iv, paste0(nm, "_intervals.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 		cl <- merge(loci[, c("CHROM", "POS")], assign_clusters(loci, iv), by = c("CHROM", "POS"))
 		write.table(cl, paste0(nm, "_cluster_SNPs.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 		res[[cc]] <- list(intervals = iv, clusters = cl)
 		msg("  %-16s %4d windows tested, %4d significant, %4d clusters, %s SNPs in clusters", cc, nrow(tt),
-			sum(tt$fdr < 0.05 & tt$max_score >= 2), nrow(iv), format(nrow(cl), big.mark = ","))
+			sum(tt$fdr < 0.05 & tt$max_score >= SIG), nrow(iv), format(nrow(cl), big.mark = ","))
 	}
 	res
 }
@@ -300,8 +300,8 @@ t1$EvPA.T1 <- t1$PAvE.T1; t1 <- t1[, -9]
 t1_fdr <- t1; for (i in 3:8) t1_fdr[, i] <- p.adjust(as.numeric(t1_fdr[, i]), method = "fdr")
 sc1 <- merge(t1_fdr, cbind(sites1, abs(fd_t1)), by = c("CHROM", "POS"))
 sc1 <- sc1[order(sc1[, 1], sc1[, 2]), ]
-## FDR column f (EvPA, EvSE, EvSP, ...) is paired with difference column f + 6 (EvSE, EvSP, EvPA, ...)
-dp_for <- if (FIX) c(EvSE.T1 = "EvSE.T1.diff", EvSP.T1 = "EvSP.T1.diff") else c(EvSE.T1 = names(sc1)[4 + 6], EvSP.T1 = names(sc1)[5 + 6])
+## each FDR column is paired with the |delta p| column of the same contrast
+dp_for <- c(EvSE.T1 = "EvSE.T1.diff", EvSP.T1 = "EvSP.T1.diff")
 sc1s <- sc1[, 1:2]
 for (cc in names(dp_for)) {
 	sc1s[[cc]] <- score_of(sc1[[cc]], sc1[[dp_for[cc]]])
@@ -312,9 +312,8 @@ cl1 <- make_clusters(sc1s, names(dp_for), t1, "Aug")
 msg("November all-sample clusters ...")
 sc4 <- merge(tpt4[, c("CHROM", "POS", "EvSP.T4.fdr")], cbind(sites4, abs(fd_t4)), by = c("CHROM", "POS"))
 sc4 <- sc4[order(sc4[, 1], sc4[, 2]), ]
-sc4$EvSP.T4 <- score_of(sc4$EvSP.T4.fdr, sc4$EvSP.T4.diff, six_on_score = !FIX)
-note_pair("November all-sample", "EvSP.T4", "EvSP.T4.fdr", "EvSP.T4.diff", TRUE,
-	if (FIX) "" else "score 6 = FDR < 1e-5 without the |delta p| > 0.02 condition")
+sc4$EvSP.T4 <- score_of(sc4$EvSP.T4.fdr, sc4$EvSP.T4.diff)
+note_pair("November all-sample", "EvSP.T4", "EvSP.T4.fdr", "EvSP.T4.diff", TRUE)
 cl4 <- make_clusters(sc4[, c("CHROM", "POS", "EvSP.T4")], "EvSP.T4", tpt4, "Nov")
 ## make_clusters() set the seed for the November shuffle; the cross-cluster tests follow it
 ## directly, so the matched-SNP draws continue from that state.
@@ -391,9 +390,8 @@ for (nm in names(cross)) {
 ##########################################################################################
 ## 6. Leave-one-out clusters and their concordance t-tests                             ##
 ##########################################################################################
-## Leave-one-out FDR columns are in cage-number order; the allele-frequency difference
-## columns in the sample order of the cages (SE_loo / SP_loo). They are paired by
-## position; RF_FIX_SCORE_PAIRING pairs them by cage.
+## Leave-one-out FDR columns are in cage-number order and the allele-frequency difference
+## columns in the sample order of the cages (SE_loo / SP_loo); they are paired by cage.
 msg("August leave-one-out clusters ...")
 dpL <- sites1[order(sites1$CHROM, sites1$POS), 1:2]   # loci of a sorted bed, values unsorted
 for (i in SE_loo) dpL[[paste0("EvSE.T1_no", i)]] <- abs(no1[[i]][, 1])
@@ -403,7 +401,7 @@ scL <- scL[order(scL[, 1], scL[, 2]), ]
 lcolsL <- c()
 for (k in seq_along(loo1_cols)) {
 	fc <- paste0(loo1_cols[k], ".fdr")
-	dc <- if (FIX) loo1_cols[k] else names(dpL)[k + 2]
+	dc <- loo1_cols[k]
 	nm <- paste0(loo1_cols[k], ".score"); scL[[nm]] <- score_of(scL[[fc]], scL[[dc]]); lcolsL <- c(lcolsL, nm)
 	note_pair("August leave-one-out", nm, fc, paste0(dc, " (|delta p| without that cage)"), sub("\\.fdr$", "", fc) == dc)
 }
@@ -417,7 +415,7 @@ scL4 <- scL4[order(scL4[, 1], scL4[, 2]), ]
 lcols4 <- c()
 for (k in seq_along(SP_CAGES)) {
 	fc <- paste0("EvSP.T4_no", SP_CAGES[k], ".fdr")
-	dc <- if (FIX) paste0("EvSP.T4_no", SP_CAGES[k]) else names(dpL4)[k + 2]
+	dc <- paste0("EvSP.T4_no", SP_CAGES[k])
 	nm <- paste0("EvSP.T4_no", SP_CAGES[k], ".score"); scL4[[nm]] <- score_of(scL4[[fc]], scL4[[dc]]); lcols4 <- c(lcols4, nm)
 	note_pair("November leave-one-out", nm, fc, paste0(dc, " (|delta p| without that cage)"), sub("\\.fdr$", "", fc) == dc)
 }
@@ -429,7 +427,7 @@ loo_test <- function(fdr_cols, fdr_src, clus, cages, sign, label) {
 	out <- list()
 	for (i in seq_along(cages)) {
 		## FDR column i of the leave-one-out table; clusters of cages[i]; sign column i
-		fc <- if (FIX) grep(paste0("_no", cages[i], "\\.fdr$"), fdr_cols, value = TRUE) else fdr_cols[i]
+		fc <- grep(paste0("_no", cages[i], "\\.fdr$"), fdr_cols, value = TRUE)
 		cc <- grep(paste0("_no", cages[i], "\\.score$"), names(clus), value = TRUE)
 		if (fc != sub("\\.score$", ".fdr", cc)) cat("  note:", label, "left-out cage", cages[i], "uses FDR column", fc, "with clusters", cc, "(paired by position)\n")
 		out[[i]] <- concordance(cbind(fdr_src[, 1:2], fdr = fdr_src[[fc]]), clus[[cc]]$clusters,

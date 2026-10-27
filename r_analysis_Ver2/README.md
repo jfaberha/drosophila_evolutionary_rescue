@@ -15,20 +15,20 @@ from every analysis. Phenotypic and census analyses are archived separately on D
 |---|---|---|
 | `00_config.R` | Paths, sample-90 exclusion, cage groups, helpers | — |
 | `01_glm/` | All per-SNP GLMs (28 models incl. leave-one-out; quasi-Poisson, founders quasi-binomial) | inputs to everything genomic |
-| `02_build_glm_master.R` | Merges GLM tables; FDR; −log10(P); 21-SNP windows; shared objects | SI 2.1.1–2.1.2 counts; inputs to 03–10 |
-| `03_genome_scans.R` | Manhattan plots; \|Δp\| at outliers and candidate genes vs matched SNPs; outlier overlap test | Fig. 2D–G, 3D–I, S3, S4, S8; SI 2.1.2–2.1.4 |
-| `04_rrho_spearman.R` | Spearman correlations and RRHO of August contrasts | main-text ρ; Fig. S11B–D |
-| `05_convergent_candidates.R` | Convergent candidate SNP sets and gene lists; residual Manhattans; trajectories | Fig. 4D, S12; Tables S7, S10, S11; SI 2.3 |
-| `06_cage_scores_founder_axis.R` | Population shifts toward the pre-adapted state | Fig. 3J, 4C; SI 2.2.3 |
+| `02_build_glm_master.R` | Merges GLM tables; FDR; −log10(P); 21-SNP windows; shared objects | SI 2.1.2–2.1.3 counts; inputs to 03–10 |
+| `03_genome_scans.R` | Manhattan plots; \|Δp\| at outliers and candidate genes vs matched SNPs; outlier overlap test | Fig. 2D–G, 3D–I, S3, S4, S8; SI 2.1.3–2.1.4 |
+| `04_rrho_spearman.R` | Spearman correlations and RRHO of August contrasts | main-text ρ; Fig. S10B–D |
+| `05_convergent_candidates.R` | Convergent candidate SNP sets and gene lists; residual Manhattans; trajectories | Fig. 4D, S11; Tables S7, S10, S11; SI 2.3 |
+| `06_cage_scores_founder_axis.R` | Population shifts toward the pre-adapted state | Fig. 3J, 4C; SI 2.2.2 |
 | `07_concordance_LOO.R` | SNP clusters; leave-one-out and cross-cluster concordance t-tests; Euclidean distances | Tables S3, S4, S6; SI 2.4; Fig. S9 |
-| `08_candidate_genes.R` | Spinosad candidate genes (Table S2) vs outliers (hypergeometric, Wilcoxon) | SI 1.8.6; SI 2.1.3–2.1.4 |
+| `08_candidate_genes.R` | Spinosad candidate genes (Table S2) vs outliers (hypergeometric, Wilcoxon) | SI 1.8.6; SI 2.1.4 |
 | `09_GO_enrichment.R` (+ `get_GO_files.sh`) | GO enrichment of the convergent candidate gene lists | Table S8 |
-| `10_cost_temporal.R` | Cost of resistance: temporal change vs pre-adapted outliers; Spearman; top-10K vs matched SNPs | Tables S1, S9, S12, S13; Fig. S13 |
-| `11_hafpipe_validation.R` | HAF-pipe and BCFtools frequencies vs DGRP2 founder frequencies | Fig. S14; SI 1.7 |
-| `12_diversity_theta.R` (+ `grenedalf_theta.sh`) | Watterson's θ per chromosome and genome-wide at 500x and 3,500x effective coverage (all sampling dates); GLMs among groups on the August samples | Fig. S10; Table S5; SI 1.8.5, 2.2.1 |
+| `10_cost_temporal.R` | Cost of resistance: temporal change vs pre-adapted outliers; Spearman; top-10K vs matched SNPs | Tables S1, S9, S12, S13; Fig. S12 |
+| `11_hafpipe_validation.R` | HAF-pipe and BCFtools frequencies vs DGRP2 founder frequencies | Fig. S13; SI 1.7 |
+| `12_diversity_theta.R` (+ `grenedalf_theta.sh`) | Watterson's θ per chromosome and genome-wide at 500x and 3,500x effective coverage; GLMs among groups on the August samples | Table S5; SI 1.8.5, 2.2.1 |
 
 Not included yet: the read-processing and HAF-pipe commands (grenepipe, HAF-pipe), the
-sequencing statistics (SI 2.1.1) and the inversion analysis (SI 2.2.2).
+sequencing statistics (SI 2.1.2) and the inversion analysis (SI 2.1.1).
 
 ## Inputs
 By default every path is a folder inside this repository; set the `RF_*` environment
