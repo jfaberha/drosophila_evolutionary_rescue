@@ -17,14 +17,14 @@ from every analysis. Phenotypic and census analyses are archived separately on D
 | `01_glm/` | All per-SNP GLMs (28 models incl. leave-one-out; quasi-Poisson, founders quasi-binomial) | inputs to everything genomic |
 | `02_build_glm_master.R` | Merges GLM tables; FDR; −log10(P); 21-SNP windows; shared objects | SI 2.1.2–2.1.3 counts; inputs to 03–10 |
 | `03_genome_scans.R` | Manhattan plots; \|Δp\| at outliers and candidate genes vs matched SNPs; outlier overlap test | Fig. 2D–G, 3D–I, S3, S4, S8; SI 2.1.3–2.1.4 |
-| `04_rrho_spearman.R` | Spearman correlations and RRHO of August contrasts | main-text ρ; Fig. S10B–D |
+| `04_rrho_spearman.R` | Spearman correlations and RRHO of August contrasts | main-text ρ; Fig. S11B–D |
 | `05_convergent_candidates.R` | Convergent candidate SNP sets and gene lists; residual Manhattans; trajectories | Fig. 4D, S11; Tables S7, S10, S11; SI 2.3 |
 | `06_cage_scores_founder_axis.R` | Population shifts toward the pre-adapted state | Fig. 3J, 4C; SI 2.2.2 |
-| `07_concordance_LOO.R` | SNP clusters; leave-one-out and cross-cluster concordance t-tests; Euclidean distances | Tables S3, S4, S6; SI 2.4; Fig. S9 |
+| `07_concordance_LOO.R` | SNP clusters (extinct, rescued, pre-adapted); leave-one-out and cross-cluster concordance t-tests; overlap of pre-adapted clusters with the other sets; Euclidean distances | Tables S3, S4, S6; SI 1.8.11, 2.4; Figs. S9, S10 |
 | `08_candidate_genes.R` | Spinosad candidate genes (Table S2) vs outliers (hypergeometric, Wilcoxon) | SI 1.8.6; SI 2.1.4 |
 | `09_GO_enrichment.R` (+ `get_GO_files.sh`) | GO enrichment of the convergent candidate gene lists | Table S8 |
-| `10_cost_temporal.R` | Cost of resistance: temporal change vs pre-adapted outliers; Spearman; top-10K vs matched SNPs | Tables S1, S9, S12, S13; Fig. S12 |
-| `11_hafpipe_validation.R` | HAF-pipe and BCFtools frequencies vs DGRP2 founder frequencies | Fig. S13; SI 1.7 |
+| `10_cost_temporal.R` | Cost of resistance: temporal change vs pre-adapted outliers; Spearman; top-10K vs matched SNPs | Tables S1, S9, S12, S13; Fig. S13 |
+| `11_hafpipe_validation.R` (+ `liftover_dgrp2_frq.R`, `get_liftover_chain.sh`) | HAF-pipe and BCFtools frequencies vs DGRP2 founder frequencies (DGRP2 positions lifted from dm3 to dm6 first) | Fig. S14; SI 1.7 |
 | `12_diversity_theta.R` (+ `grenedalf_theta.sh`) | Watterson's θ per chromosome and genome-wide at 500x and 3,500x effective coverage; GLMs among groups on the August samples | Table S5; SI 1.8.5, 2.2.1 |
 
 Not included yet: the read-processing and HAF-pipe commands (grenepipe, HAF-pipe), the
@@ -36,10 +36,10 @@ variables (or edit the PATHS block of `00_config.R`) to use other locations.
 
 | Folder (default) | Variable | Contents |
 |---|---|---|
-| `data/input/` | `RF_RAW_INPUT` | HAF-pipe allele-frequency table, sample metadata, VEP/FlyCADD annotation, spinosad candidate gene list, genic-feature table, DGRP2 and BCFtools `.frq` files, grenedalf θ tables (`bash grenedalf_theta.sh`) |
+| `data/input/` | `RF_RAW_INPUT` | HAF-pipe allele-frequency table, sample metadata, VEP/FlyCADD annotation, spinosad candidate gene list, genic-feature table, DGRP2 (dm3) and BCFtools `.frq` files, grenedalf θ tables (`bash grenedalf_theta.sh`) |
 | `data/glm_tables/` | `RF_GLM_TABLES` | per-SNP GLM result tables written by `01_glm/glm_models.R` |
 | `data/GO/` | `RF_GO_FILES` | `go-basic.obo` and `fb.gaf.gz` (`bash get_GO_files.sh`) |
-| `output/` | `RF_OUT_ROOT` | everything the modules write (one sub-folder per module) |
+| `output/` | `RF_OUT_ROOT` | everything the modules write (one sub-folder per module); `output/liftover/` holds the dm3-to-dm6 chain (`bash get_liftover_chain.sh`) and the DGRP2 frequencies lifted to dm6 (`liftover_dgrp2_frq.R`, run by `run_11_hafpipe_validation.sh`) |
 | `data/published_tables/` | — | published Tables S1, S3, S4, S6–S13, used for the cell-by-cell checks (S7, S10 and S11 also supply the feature annotation text, FlyBase r6.69) |
 
 ## Running (Slurm; tested on WSU Kamiak with R 4.5.1)
@@ -58,9 +58,9 @@ sbatch run_05_convergent_candidates.sh     # after 02                           
 sbatch run_06_cage_scores_founder_axis.sh  # after 02                                (~2 min)
 sbatch run_08_candidate_genes.sh           # after 02                                (~15 min)
 sbatch run_10_cost_temporal.sh             # after 02                                (~43 min)
-sbatch run_07_concordance_LOO.sh           # after 05 (Fig. S9 SNP list)             (~28 min)
+sbatch run_07_concordance_LOO.sh           # after 05 (Fig. S10 SNP list)             (~28 min)
 sbatch run_09_GO_enrichment.sh             # after 05; GO files from get_GO_files.sh (~1 min)
-sbatch run_11_hafpipe_validation.sh        # any time (input files only)             (~2 min)
+sbatch run_11_hafpipe_validation.sh        # after get_liftover_chain.sh (login node)  (~3 min)
 sbatch run_12_diversity_theta.sh           # any time (grenedalf tables)             (~1 min)
 ```
 

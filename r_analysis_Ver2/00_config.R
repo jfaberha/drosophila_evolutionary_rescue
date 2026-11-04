@@ -26,6 +26,7 @@ PATHS <- list(
 	go_files   = Sys.getenv("RF_GO_FILES",   file.path(RF_HOME, "data", "GO"))
 )
 PATHS$rds <- file.path(PATHS$out_root, "rds")   # shared objects written by 02 and read by later modules
+PATHS$liftover <- file.path(PATHS$out_root, "liftover")   # dm3-to-dm6 chain and lifted DGRP2 frequencies (get_liftover_chain.sh, liftover_dgrp2_frq.R)
 
 FILES <- list(
 	hafpipe   = "rudflies_2023_hafpipe.csv",

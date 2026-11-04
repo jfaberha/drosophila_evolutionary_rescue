@@ -86,37 +86,45 @@ module,key,expected,tolerance,reported_in
 06_cage_scores_founder_axis,Fig4C_P_Nov,0.03,0,main text
 06_cage_scores_founder_axis,Fig4C_extinct_Aug,0.055,0,main text
 06_cage_scores_founder_axis,Fig4C_extinct_Aug_P,0.003,0,main text
-07_concordance_LOO,clusters_EvSE.T1,162,0,SI 1.8.11 (all-sample clusters for cross-cluster tests; extinct August)
-07_concordance_LOO,clusters_EvSP.T1,71,0,SI 1.8.11 (all-sample clusters for cross-cluster tests; rescued August)
-07_concordance_LOO,clusters_EvSP.T4,382,0,SI 1.8.11 (all-sample clusters for cross-cluster tests; rescued November)
-07_concordance_LOO,LOO_EvSE.T1_min,143,0,SI 1.8.11 and 2.4 (leave-one-out clusters 143-202)
-07_concordance_LOO,LOO_EvSE.T1_max,202,0,SI 1.8.11 and 2.4 (leave-one-out clusters 143-202)
-07_concordance_LOO,LOO_EvSP.T1_min,62,0,SI 1.8.11 and 2.4 (leave-one-out clusters 62-148)
-07_concordance_LOO,LOO_EvSP.T1_max,148,0,SI 1.8.11 and 2.4 (leave-one-out clusters 62-148)
-07_concordance_LOO,LOO_EvSP.T4_min,371,0,SI 1.8.11 and 2.4 (leave-one-out clusters 371-392)
-07_concordance_LOO,LOO_EvSP.T4_max,392,0,SI 1.8.11 and 2.4 (leave-one-out clusters 371-392)
-07_concordance_LOO,S3_SET1clust_median_t,5.81,0.005,main text; Table S3; SI 2.4.1
-07_concordance_LOO,S3_SET1clust_median_P,8.16e-09,5e-11,main text; Table S3; SI 2.4.1
-07_concordance_LOO,S3_SPT1clust_median_t,0.60,0.005,Table S3
-07_concordance_LOO,S3_SPT1clust_median_P,0.273,0.0005,Table S3
-07_concordance_LOO,S3_SPT4clust_median_t,0.90,0.005,Table S3
-07_concordance_LOO,S3_SPT4clust_median_P,0.184,0.0005,Table S3
-07_concordance_LOO,S4_SET1clust_median_t,1.89,0.005,Table S4
-07_concordance_LOO,S4_SET1clust_median_P,0.0300,5e-05,Table S4
-07_concordance_LOO,S4_SPT1clust_median_t,2.78,0.005,main text; Table S4; SI 2.4.1
-07_concordance_LOO,S4_SPT1clust_median_P,0.00334,5e-06,main text; Table S4; SI 2.4.1
-07_concordance_LOO,S4_SPT4clust_median_t,1.03,0.005,Table S4
-07_concordance_LOO,S4_SPT4clust_median_P,0.151,0.0005,Table S4
-07_concordance_LOO,S6_SET1clust_median_t,0.78,0.005,Table S6
-07_concordance_LOO,S6_SET1clust_median_P,0.217,5e-05,Table S6
-07_concordance_LOO,S6_SPT1clust_median_t,0.27,0.005,Table S6
-07_concordance_LOO,S6_SPT1clust_median_P,0.393,0.0005,Table S6
-07_concordance_LOO,S6_SPT4clust_median_t,5.38,0.005,main text; Table S6; SI 2.4.2
-07_concordance_LOO,S6_SPT4clust_median_P,4.93e-08,5e-11,main text; Table S6; SI 2.4.2
+07_concordance_LOO,clusters_EvSE.T1,49,0,SI 1.8.11 (all-sample clusters for cross-cluster tests; extinct August)
+07_concordance_LOO,clusters_EvSP.T1,3,0,SI 1.8.11 (all-sample clusters for cross-cluster tests; rescued August)
+07_concordance_LOO,clusters_EvSP.T4,371,0,SI 1.8.11 (all-sample clusters for cross-cluster tests; rescued November)
+07_concordance_LOO,clusters_EvPA.T1,334,0,SI 1.8.11 and 2.4; Fig. S9C (all-sample clusters; pre-adapted August)
+07_concordance_LOO,overlapPA_extinct_Aug_clusters,46,0,SI 2.4 (extinct August clusters overlapping a pre-adapted cluster)
+07_concordance_LOO,overlapPA_extinct_Aug_Mb,19.87,0,SI 2.4 (Mb of extinct August clusters inside pre-adapted clusters)
+07_concordance_LOO,overlapPA_extinct_Aug_totalMb,20.33,0,SI 2.4 (Mb in extinct August clusters)
+07_concordance_LOO,overlapPA_rescued_Aug_clusters,2,0,SI 2.4 (rescued August clusters overlapping a pre-adapted cluster)
+07_concordance_LOO,overlapPA_rescued_Nov_clusters,218,0,SI 2.4 (rescued November clusters overlapping a pre-adapted cluster)
+07_concordance_LOO,overlapPA_rescued_Nov_Mb,22.01,0,SI 2.4 (Mb of rescued November clusters inside pre-adapted clusters)
+07_concordance_LOO,overlapPA_rescued_Nov_totalMb,44.62,0,SI 2.4 (Mb in rescued November clusters)
+07_concordance_LOO,LOO_EvSE.T1_min,45,0,SI 1.8.11 and 2.4 (leave-one-out clusters 45-65)
+07_concordance_LOO,LOO_EvSE.T1_max,65,0,SI 1.8.11 and 2.4 (leave-one-out clusters 45-65)
+07_concordance_LOO,LOO_EvSP.T1_min,1,0,SI 1.8.11 and 2.4 (leave-one-out clusters 1-16)
+07_concordance_LOO,LOO_EvSP.T1_max,16,0,SI 1.8.11 and 2.4 (leave-one-out clusters 1-16)
+07_concordance_LOO,LOO_EvSP.T4_min,195,0,SI 1.8.11 and 2.4 (leave-one-out clusters 195-231)
+07_concordance_LOO,LOO_EvSP.T4_max,231,0,SI 1.8.11 and 2.4 (leave-one-out clusters 195-231)
+07_concordance_LOO,S3_SET1clust_median_t,7.16,0.005,main text; Table S3; SI 2.4.1
+07_concordance_LOO,S3_SET1clust_median_P,8.05e-11,5e-13,main text; Table S3; SI 2.4.1
+07_concordance_LOO,S3_SPT1clust_median_t,0.72,0.005,Table S3
+07_concordance_LOO,S3_SPT1clust_median_P,0.267,0.0005,Table S3
+07_concordance_LOO,S3_SPT4clust_median_t,0.49,0.005,Table S3
+07_concordance_LOO,S3_SPT4clust_median_P,0.311,0.0005,Table S3
+07_concordance_LOO,S4_SET1clust_median_t,0.34,0.005,Table S4
+07_concordance_LOO,S4_SET1clust_median_P,0.368,5e-05,Table S4
+07_concordance_LOO,S4_SPT1clust_median_t,0.91,0.005,main text; Table S4; SI 2.4.1
+07_concordance_LOO,S4_SPT1clust_median_P,0.201,5e-06,main text; Table S4; SI 2.4.1
+07_concordance_LOO,S4_SPT4clust_median_t,0.47,0.005,Table S4
+07_concordance_LOO,S4_SPT4clust_median_P,0.319,0.0005,Table S4
+07_concordance_LOO,S6_SET1clust_median_t,0.46,0.005,Table S6
+07_concordance_LOO,S6_SET1clust_median_P,0.322,5e-05,Table S6
+07_concordance_LOO,S6_SPT1clust_median_t,-0.45,0.005,Table S6
+07_concordance_LOO,S6_SPT1clust_median_P,0.656,0.0005,Table S6
+07_concordance_LOO,S6_SPT4clust_median_t,4.25,0.005,main text; Table S6; SI 2.4.2
+07_concordance_LOO,S6_SPT4clust_median_P,1.34e-05,5e-08,main text; Table S6; SI 2.4.2
 07_concordance_LOO,TableS3_matches_published,1,0,Table S3 (every cell)
 07_concordance_LOO,TableS4_matches_published,1,0,Table S4 (every cell)
 07_concordance_LOO,TableS6_matches_published,1,0,Table S6 (every cell)
-07_concordance_LOO,FigS9_n_snps,441,0,Fig. S9 caption (November convergent candidates)
+07_concordance_LOO,FigS10_n_snps,441,0,Fig. S10 caption (November convergent candidates)
 08_candidate_genes,SI213_PAvE_FDR01_genes,36,0,SI 2.1.4
 08_candidate_genes,SI213_PAvE_FDR01_P,0.1058,0.0001,SI 2.1.4
 08_candidate_genes,SI213_SvE_missense_FDR05_genes,3,0,SI 2.1.4
@@ -166,11 +174,12 @@ module,key,expected,tolerance,reported_in
 10_cost_temporal,S12_PA_rho_max,-0.13,0,SI 2.5.2
 10_cost_temporal,S12_E_rho_min_neg,-0.04,0,SI 2.5.2
 10_cost_temporal,S12_E_rho_max_neg,-0.2,0,SI 2.5.2
-10_cost_temporal,FigS12_n_min,9977,0,Fig. S12 caption
-10_cost_temporal,FigS12_n_max,10000,0,Fig. S12 caption
+10_cost_temporal,FigS13_n_min,9977,0,Fig. S13 caption
+10_cost_temporal,FigS13_n_max,10000,0,Fig. S13 caption
 11_hafpipe_validation,n_hafpipe_variants,3231230,0,SI 2.1.2 (3.23 million variants)
-11_hafpipe_validation,R_dgrp2_vs_bcftools,0.86,0.005,SI 1.7; Fig. S13 caption
-11_hafpipe_validation,R_dgrp2_vs_hafpipe,0.90,0.005,SI 1.7; Fig. S13 caption
+11_hafpipe_validation,R_dgrp2_vs_bcftools,0.94,0.005,SI 1.7; Fig. S14 caption
+11_hafpipe_validation,R_dgrp2_vs_hafpipe,0.99,0.005,SI 1.7; Fig. S14 caption
+11_hafpipe_validation,min_arm_R_dgrp2_vs_hafpipe,0.9,0.1,check: DGRP2 and HAF-pipe frequencies correlated on every arm (R >= 0.8)
 12_diversity_theta,S5_genome_SEvSP_500x,0.9549,0.0001,Table S5; SI 2.2.1 (extinct vs rescued)
 12_diversity_theta,S5_genome_SEvSP_3500x,0.9332,0.0001,Table S5; SI 2.2.1 (extinct vs rescued)
 12_diversity_theta,S5_genome_EvPA_500x,3.472e-06,1e-09,Table S5 (pre-adapted vs unexposed)

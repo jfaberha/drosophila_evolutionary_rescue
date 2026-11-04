@@ -1,5 +1,6 @@
 #!/bin/bash
-## 11_hafpipe_validation — submit from the repository folder (needs only the input files):  sbatch run_11_hafpipe_validation.sh
+## 11_hafpipe_validation — submit from the repository folder:  sbatch run_11_hafpipe_validation.sh
+## Needs the dm3-to-dm6 chain in <output folder>/liftover first (on the login node: bash get_liftover_chain.sh "$RF_OUT_ROOT").
 #SBATCH --partition=cas
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=64GB
@@ -12,4 +13,4 @@
 module load r/4.5.1
 cd $SLURM_SUBMIT_DIR
 echo "Started on $(hostname) at $(date)"
-Rscript --vanilla 11_hafpipe_validation.R && echo "R finished OK - all checks passed at $(date)" || { echo "R FAILED or a check failed at $(date) - see the report in the output folder"; exit 1; }
+Rscript --vanilla liftover_dgrp2_frq.R && Rscript --vanilla 11_hafpipe_validation.R && echo "R finished OK - all checks passed at $(date)" || { echo "R FAILED or a check failed at $(date) - see the report in the output folder"; exit 1; }

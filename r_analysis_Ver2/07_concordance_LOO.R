@@ -9,12 +9,15 @@
 ###  In this file: 07_concordance_LOO.R.
 
 ###  Produces:
-###  — parallel (concordant) allele-frequency change in exposed populations: SNP clusters, leave-one-out concordance t-tests, Fig. S9.             
+###  — parallel (concordant) allele-frequency change in exposed populations: SNP clusters (Fig. S9), leave-one-out concordance t-tests, Fig. S10;
+###    clusters of pre-adapted vs unexposed divergence (August) and their overlap with the extinct and rescued clusters.             
 
 ###  Outputs:
 ###  Tables S3, S4, S6   concordance t-tests (extinct Aug; rescued Aug; rescued Nov)
-###  SI 1.8.11, 2.4       cluster counts (all-sample GLMs) and leave-one-out ranges
-###  Fig. S9             Euclidean distances among August populations at the 441 November convergent candidate SNPs (from module 05)
+###  SI 1.8.11, 2.4       cluster counts (all-sample GLMs) and leave-one-out ranges; overlap of pre-adapted clusters with the other cluster sets
+###  Fig. S9              Manhattan plots of significant SNP clusters (all-sample GLMs): unexposed vs (A) extinct (Aug), (B) rescued (Aug),
+###                       (C) pre-adapted (Aug), (D) rescued (Nov)
+###  Fig. S10             Euclidean distances among August populations at the 441 November convergent candidate SNPs (from module 05)
 
 ########################################
 
@@ -25,7 +28,8 @@ suppressMessages({ library(dplyr); library(ggplot2) })
 OUT <- module_dir("07_concordance_LOO"); setwd(OUT)
 sink("07_concordance_LOO_report.txt", split = TRUE)
 dir.create("clusters", FALSE); dir.create("ttests", FALSE)
-SIG <- 2   # minimum score for a significant SNP
+SIG <- as.numeric(Sys.getenv("RF_CLUSTER_SIG", "3"))   # a significant window must contain a SNP scoring >= SIG (3: FDR < 0.01 and |delta p| > 0.06)
+cat("Cluster anchor: window must contain a SNP with score >=", SIG, "\n")
 rd <- function(f) read.table(file.path(PATHS$glm_tables, f), header = TRUE)
 CHRS <- c("2L", "2R", "3L", "3R", "X")
 N_ITER <- 100
@@ -200,14 +204,16 @@ msg("SNPs with a consequence for matching: %s", format(nrow(vep_priority), big.m
 ##########################################################################################
 ## 3. Cluster helpers (501-SNP windows, 100-SNP steps)                                 ##
 ##########################################################################################
-## Score 0-3 from FDR and |delta p| (Rudman et al. 2022): 0 FDR > 0.2 and |delta p| <= 0.02;
-## 1 FDR < 0.2 or |delta p| > 0.02; 2 FDR < 0.05 and |delta p| > 0.02; 3 FDR < 0.01 and |delta p| > 0.02
+## Score 0-3 from FDR and |delta p| (adapted from Rudman et al. 2022; each SNP gets the highest level whose conditions
+## are both met): 1 FDR < 0.2 and |delta p| > 0.02; 2 FDR < 0.05 and |delta p| > 0.04; 3 FDR < 0.01 and |delta p| > 0.06;
+## 0 all other SNPs. Score 1 requires both conditions: with "FDR < 0.2 or |delta p| > 0.02" (Rudman et al. 2022) about half
+## of all SNPs scored 1 and windows became significant from frequency noise (20261029_cluster_criteria comparison).
 score_of <- function(fdr, dp) {
 	s <- rep(NA_real_, length(fdr))
-	s[which(fdr > 0.2)] <- 0
-	s[which(fdr < 0.2 | (fdr > 0.2 & dp > 0.02))] <- 1
-	s[which(fdr < 0.05 & dp > 0.02)] <- 2
-	s[which(fdr < 0.01 & dp > 0.02)] <- 3
+	s[which(!is.na(fdr) & !is.na(dp))] <- 0
+	s[which(fdr < 0.2 & dp > 0.02)] <- 1
+	s[which(fdr < 0.05 & dp > 0.04)] <- 2
+	s[which(fdr < 0.01 & dp > 0.06)] <- 3
 	s
 }
 ## Shuffle loci within chromosomes (one sample() per chromosome)
@@ -441,6 +447,39 @@ tests$LOO_SPT1clust_EvSPT1 <- loo_test(paste0("EvSP.T1_no", SP_CAGES, ".fdr"), l
 tests$LOO_SPT4clust_EvSPT4 <- loo_test(paste0("EvSP.T4_no", SP_CAGES, ".fdr"), tpt4, clL4, SP_loo, sign_EvSPT4, "SPT4clust")
 for (nm in grep("^LOO_", names(tests), value = TRUE)) if (!is.null(tests[[nm]])) write.table(tests[[nm]], paste0("ttests/ttest_", nm, "_topsig_results.txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
+##########################################################################################
+## 6b. Pre-adapted (August) all-sample clusters and their overlap with the other sets  ##
+##########################################################################################
+## Same scoring (0-3) and anchor (>= SIG) as the other cluster sets; FDR from the time-point model (as Fig. 3) paired with
+## |delta p| of the same contrast. Not used in concordance t-tests (there are no leave-one-out GLMs for pre-adapted cages);
+## used for Fig. S9C and for the overlap with the extinct and rescued clusters (SI 2.4). Placed after all cluster t-tests:
+## make_clusters() resets the seed, so this cannot change any earlier result.
+msg("Pre-adapted (August) all-sample clusters ...")
+scPA <- sc1[, 1:2]
+scPA$EvPA.T1 <- score_of(sc1$EvPA.T1, sc1$EvPA.T1.diff)
+note_pair("August all-sample", "EvPA.T1", "EvPA.T1.fdr", "EvPA.T1.diff", TRUE, "pre-adapted; Fig. S9C and overlap only")
+clPA <- make_clusters(scPA, "EvPA.T1", t1, "Aug")
+ivPA <- clPA$EvPA.T1$intervals
+## bp of intervals a covered by intervals b, and the number of a-intervals touching any b-interval
+ov_bp <- function(a, b) {
+	bp <- 0; n <- 0
+	for (i in seq_len(nrow(a))) {
+		s <- b[b$seqnames == a$seqnames[i] & b$end >= a$start[i] & b$start <= a$end[i], ]
+		if (nrow(s)) { n <- n + 1
+			cov <- reduce_iv(data.frame(CHROM = a$seqnames[i], START = pmax(s$start, a$start[i]), STOP = pmin(s$end, a$end[i])))
+			bp <- bp + sum(cov$width) }
+	}
+	c(n = n, bp = bp)
+}
+others <- list(extinct_Aug = cl1$EvSE.T1$intervals, rescued_Aug = cl1$EvSP.T1$intervals, rescued_Nov = cl4$EvSP.T4$intervals)
+ovt <- do.call(rbind, lapply(names(others), function(nm) { o <- others[[nm]]; a <- ov_bp(o, ivPA)
+	data.frame(cluster_set = nm, clusters = nrow(o), clusters_overlapping_PA = a[["n"]], clustered_Mb = round(sum(o$width) / 1e6, 2),
+		Mb_inside_PA_clusters = round(a[["bp"]] / 1e6, 2), percent_inside_PA_clusters = round(100 * a[["bp"]] / sum(o$width), 1)) }))
+write.csv(ovt, "PA_cluster_overlap.csv", row.names = FALSE)
+cat(sprintf("\nPre-adapted (August) clusters: %d; per arm %s; median length %.0f kb; total %.1f Mb\n", nrow(ivPA),
+	paste(names(table(ivPA$seqnames)), table(ivPA$seqnames), sep = ":", collapse = " "), median(ivPA$width) / 1e3, sum(ivPA$width) / 1e6))
+cat("Overlap of the extinct and rescued clusters with the pre-adapted clusters (SI 2.4)\n"); print(ovt, row.names = FALSE)
+
 pairing <- do.call(rbind, pairing)
 write.csv(pairing, "score_pairing.csv", row.names = FALSE)
 cat("\nCluster scores: which FDR column was paired with which |delta p| column (FALSE = different contrast or cage)\n")
@@ -478,10 +517,12 @@ for (n in names(tabs)) {
 	pf <- file.path(RF_HOME, "data", "published_tables", paste0("Table", n, ".csv"))
 	if (file.exists(pf)) {
 		pub <- read.csv(pf, check.names = FALSE, colClasses = "character")
-		same <- identical(dim(pub), dim(tabs[[n]])) && all(as.matrix(pub) == as.matrix(tabs[[n]]))
+		## compare as text, treating NA (a held-out population that could not be tested) as the string "NA"
+		m1 <- as.matrix(pub); m2 <- as.matrix(tabs[[n]]); m1[is.na(m1)] <- "NA"; m2[is.na(m2)] <- "NA"
+		same <- identical(dim(m1), dim(m2)) && all(m1 == m2)
 		cat(sprintf("  Table %s: %s\n", n, if (same) "identical to the published table" else "DIFFERS from the published table"))
 		if (!same && identical(dim(pub), dim(tabs[[n]]))) {
-			w <- which(as.matrix(pub) != as.matrix(tabs[[n]]), arr.ind = TRUE)
+			w <- which(m1 != m2, arr.ind = TRUE)
 			for (k in seq_len(min(nrow(w), 20))) cat(sprintf("    row %d (%s, %s) %s: published %s, now %s\n", w[k, 1], pub[w[k, 1], 1], pub[w[k, 1], 2],
 				names(pub)[w[k, 2]], pub[w[k, 1], w[k, 2]], tabs[[n]][w[k, 1], w[k, 2]]))
 		}
@@ -504,20 +545,62 @@ counts <- data.frame(cluster_set = c("August extinct (all samples)", "August res
 write.csv(counts, "cluster_counts.csv", row.names = FALSE)
 cat("\nCluster counts (SI 2.4)\n"); print(counts, row.names = FALSE)
 obs["clusters_EvSE.T1"] <- counts$clusters[1]; obs["clusters_EvSP.T1"] <- counts$clusters[2]; obs["clusters_EvSP.T4"] <- counts$clusters[3]
+obs["clusters_EvPA.T1"] <- nrow(ivPA)
+for (i in seq_len(nrow(ovt))) {
+	obs[paste0("overlapPA_", ovt$cluster_set[i], "_clusters")] <- ovt$clusters_overlapping_PA[i]
+	obs[paste0("overlapPA_", ovt$cluster_set[i], "_Mb")] <- ovt$Mb_inside_PA_clusters[i]
+	obs[paste0("overlapPA_", ovt$cluster_set[i], "_totalMb")] <- ovt$clustered_Mb[i]
+}
 for (g in list(c("LOO_EvSE.T1", "August extinct, without"), c("LOO_EvSP.T1", "August rescued, without"), c("LOO_EvSP.T4", "November rescued, without"))) {
 	v <- counts$clusters[startsWith(counts$cluster_set, g[2])]
 	obs[paste0(g[1], "_min")] <- min(v); obs[paste0(g[1], "_max")] <- max(v)
 }
 
 ##########################################################################################
-## 8. Fig. S9 — Euclidean distances among August populations at the November           ##
+## 8. Fig. S9 — significant SNP clusters from the all-sample GLMs                      ##
+##########################################################################################
+## -log10(P) of every SNP used for clustering (grey) with SNPs inside significant clusters coloured; adjacent clusters
+## alternate between two colours. A: unexposed vs extinct (August); B: unexposed vs rescued (August); C: unexposed vs
+## pre-adapted (August); D: unexposed vs rescued (November). Clusters of A, B and D are those used for the cross-cluster
+## tests (cl1, cl4); C is from section 6b (scoring and anchor as in section 3 for all four).
+manh_clusters <- function(p_tab, pcol, clus, title, tag) {
+	d <- data.frame(CHROM = as.character(p_tab$CHROM), POS = p_tab$POS, p = as.numeric(p_tab[[pcol]]))
+	d <- d[d$CHROM %in% CHRS & !is.na(d$p), ]
+	d$p[d$p == 0] <- min(d$p[d$p > 0]) / 2                     # P = 0 -> half the smallest non-zero P (as module 02)
+	d$lp <- -log10(d$p); d <- d[order(d$CHROM, d$POS), ]; d$CHROM <- factor(d$CHROM, levels = CHRS)
+	cs <- merge(d, clus[, c("CHROM", "POS", "color")], by = c("CHROM", "POS"))
+	ggplot(d, aes(POS / 1e6, lp)) + geom_line(colour = "#CCCCCC") +
+		geom_point(data = cs, aes(colour = color), size = 0.8) +
+		scale_colour_manual(values = c(blue4 = "#00008B", orange3 = "#B8860B"), guide = "none") +
+		facet_grid(~ CHROM, scales = "free_x", space = "free_x") +
+		scale_x_continuous(breaks = seq(0, 35, 5)) + scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+		labs(title = title, tag = tag, x = "chromosome position (Mb)", y = expression(-log[10](italic(P)))) +
+		theme_classic(base_size = 11) +
+		theme(strip.background = element_blank(), strip.text = element_text(face = "bold"),
+			plot.title = element_text(face = "bold", size = 11), plot.tag = element_text(face = "bold", size = 14))
+}
+figS9 <- list(
+	manh_clusters(t1, "EvSE.T1", cl1$EvSE.T1$clusters, "unexposed vs. extinct (Aug 24)", "A"),
+	manh_clusters(t1, "EvSP.T1", cl1$EvSP.T1$clusters, "unexposed vs. rescued (Aug 24)", "B"),
+	manh_clusters(t1, "EvPA.T1", clPA$EvPA.T1$clusters, "unexposed vs. pre-adapted (Aug 24)", "C"),
+	manh_clusters(tpt4, "EvSP.T4", cl4$EvSP.T4$clusters, "unexposed vs. rescued (Nov 24)", "D"))
+draw_S9 <- function() { grid::grid.newpage(); grid::pushViewport(grid::viewport(layout = grid::grid.layout(4, 1)))
+	for (i in seq_along(figS9)) print(figS9[[i]], vp = grid::viewport(layout.pos.row = i, layout.pos.col = 1)) }
+save_panels("FigS9_SNP_clusters.pdf", figS9, width = 7.5, height = 8)   # 7.5 in wide and 2 in per panel, as the three-panel Manhattans (Figs 3D-F, S4, S8)
+png_dev <- if (requireNamespace("ragg", quietly = TRUE)) function(f) ragg::agg_png(f, width = 7.5, height = 8, units = "in", res = 300) else
+	function(f) grDevices::png(f, width = 7.5, height = 8, units = "in", res = 300, type = "cairo")
+tryCatch({ png_dev("FigS9_SNP_clusters.png"); draw_S9(); invisible(dev.off()) }, error = function(e) cat("FigS9 PNG not written:", conditionMessage(e), "\n"))
+cat(sprintf("\nFig. S9 written: %d, %d, %d and %d clusters (A-D)\n", nrow(cl1$EvSE.T1$intervals), nrow(cl1$EvSP.T1$intervals), nrow(ivPA), nrow(cl4$EvSP.T4$intervals)))
+
+##########################################################################################
+## 9. Fig. S10 — Euclidean distances among August populations at the November           ##
 ##    convergent candidate SNPs                                                        ##
 ##########################################################################################
 cf <- file.path(PATHS$out_root, "05_convergent_candidates", "convergent_candidate_SNPs_TPT4.txt")
 if (file.exists(cf)) {
 	cand <- read.table(cf, header = TRUE, colClasses = c(CHROM = "character"))
 	af <- merge(unique(cand[, 1:2]), haf$freq, by = c("CHROM", "POS"))
-	obs["FigS9_n_snps"] <- nrow(af)
+	obs["FigS10_n_snps"] <- nrow(af)
 	x <- unique(subset(af, select = as.character(mt$samp)))       # August samples, in sample order
 	D <- as.matrix(dist(t(x), method = "euclidean", diag = TRUE, upper = FALSE)); D[D == 0] <- NA
 	w <- which(!is.na(D), arr.ind = TRUE)
@@ -529,16 +612,16 @@ if (file.exists(cf)) {
 		"E SE" = "EvSE", "E SP" = "EvSP", "E PA" = "EvPA", "PA SE" = "PAvSE", "PA SP" = "PAvSP")
 	dd$contrast <- unname(lab[pr])
 	s9 <- unique(dd[dd$contrast %in% c("EvE", "SEvSP"), c("contrast", "value")])
-	write.csv(s9, "FigS9_distances.csv", row.names = FALSE)
+	write.csv(s9, "FigS10_distances.csv", row.names = FALSE)
 	summ <- do.call(rbind, lapply(split(s9$value, s9$contrast), function(v) data.frame(n_pairs = length(v), median = median(v), min = min(v), max = max(v))))
-	write.csv(cbind(contrast = rownames(summ), summ), "FigS9_summary.csv", row.names = FALSE)
-	cat("\nFig. S9 (", nrow(af), " SNPs): distances among August populations\n", sep = ""); print(summ)
+	write.csv(cbind(contrast = rownames(summ), summ), "FigS10_summary.csv", row.names = FALSE)
+	cat("\nFig. S10 (", nrow(af), " SNPs): distances among August populations\n", sep = ""); print(summ)
 	set.seed(SEED)   # reproducible jitter
-	pdf("FigS9_euclidean_distances_jitter.pdf")
+	pdf("FigS10_euclidean_distances_jitter.pdf")
 	print(ggplot(s9, aes(x = contrast, y = value)) + geom_jitter(aes(colour = contrast)) +
 		ggtitle("Pairwise Euclidean distances: T4 candidate loci (AF) among T1 populations") + theme_classic())
 	invisible(dev.off())
-} else cat("\nFig. S9 skipped: run 05_convergent_candidates.R first (", cf, " not found)\n", sep = "")
+} else cat("\nFig. S10 skipped: run 05_convergent_candidates.R first (", cf, " not found)\n", sep = "")
 
 ok <- check_expected("07_concordance_LOO", obs)
 sink()

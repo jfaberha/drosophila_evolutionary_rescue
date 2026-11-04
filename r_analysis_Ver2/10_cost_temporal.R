@@ -12,7 +12,7 @@
 ###  Tables S1 / S9  hypergeometric overlap of parallel temporal-change SNPs (8 of 9 unexposed cages / 9 of 10 pre-adapted cages, > 3%) with August 'pre-adapted vs unexposed' outliers, in each direction
 ###  Table S12 Spearman correlations of sign-corrected -log10(P), temporal contrasts vs August 'pre-adapted vs unexposed'
 ###  Table S13 top-10K outliers of four focal contrasts vs matched SNPs (signed -log10(P) in each temporal contrast; 100 iterations)
-###  Fig. S12 direction of change of the top-10K SNPs in pre-adapted populations
+###  Fig. S13 direction of change of the top-10K SNPs in pre-adapted populations
 
 ########################################
 
@@ -142,7 +142,7 @@ tabs$S1 <- hyp_table(rE); tabs$S9 <- hyp_table(rPA)
 
 ##########################################################################################
 ## 4. Table S13: top-10K SNPs vs matched SNPs (signed -log10(P) in temporal contrasts)  ##
-##    and Fig. S12 direction counts                                                    ##
+##    and Fig. S13 direction counts                                                    ##
 ##########################################################################################
 vep <- load_vep()
 vep_priority <- vep_priority_table(glm.all, vep, Fmean); rm(vep); invisible(gc())
@@ -199,7 +199,7 @@ tabs$S13 <- do.call(rbind, lapply(c("PAvE.T1", "EvSE.T1", "EvSP.T1", "EvSP.T4"),
 
 names(tabs$S13) <- sub("-log10", paste0(intToUtf8(0x2212), "log10"), names(tabs$S13), fixed = TRUE)   # minus sign as in the SI table
 
-## Fig. S12: direction of temporal change at the top 1K / 10K SNPs, re-oriented to the focal contrast
+## Fig. S13: direction of temporal change at the top 1K / 10K SNPs, re-oriented to the focal contrast
 counts <- list()
 for (sn in c("PAvE.T1", "EvSE.T1", "EvSP.T1", "EvSP.T4")) for (N in c(`1K` = 1000, `10K` = 10000)) {
 	s <- SETS[[sn]]
@@ -235,7 +235,7 @@ p <- ggplot(long, aes(x = interval, y = n, fill = direction)) + geom_col(width =
 	guides(fill = guide_legend(nrow = 1, title.position = "top")) + theme_classic(base_size = 13) +
 	theme(legend.position = "top", legend.justification = "left", legend.title = element_text(face = "bold"),
 		strip.background = element_blank(), strip.text = element_text(face = "bold", size = 13), axis.text.x = element_text(angle = 30, hjust = 1))
-ggsave("FigS12.pdf", p, width = 16, height = 6)
+ggsave("FigS13.pdf", p, width = 16, height = 6)
 
 ##########################################################################################
 ## 5. Tables, comparison with the published tables, checks                             ##
@@ -264,7 +264,7 @@ obs["S1_T2vT4_towardE_P"] <- signif(rE$P[rE$temporal == "T2vT4" & rE$direction =
 obs["S12_PA_rho_min"] <- round(min(s12$PA_rho), 2); obs["S12_PA_rho_max"] <- round(max(s12$PA_rho), 2)
 obs["S12_E_rho_min_neg"] <- round(max(s12$E_rho[s12$E_rho < 0]), 2); obs["S12_E_rho_max_neg"] <- round(min(s12$E_rho), 2)
 n10 <- unique(counts[counts$top_n == "10K", c("SNP_set", "n_SNPs")])
-obs["FigS12_n_min"] <- min(n10$n_SNPs); obs["FigS12_n_max"] <- max(n10$n_SNPs)
+obs["FigS13_n_min"] <- min(n10$n_SNPs); obs["FigS13_n_max"] <- max(n10$n_SNPs)
 ok <- check_expected("10_cost_temporal", obs)
 sink()
 if (!ok) quit(status = 1)

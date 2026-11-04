@@ -19,7 +19,7 @@
 ###  SNP lists of the three sets (used by modules 07 and 09)
 ###  gene lists (used by 09 GO enrichment and the tables below)
 ###  Tables S7 (November), S10 (August), S11 (relaxed): features within 5 kb
-###  Fig. S11  residual Manhattan plots
+###  Fig. S12  residual Manhattan plots
 ###  Fig. 4D   allele-frequency trajectories of the November set counts reported in the main text and SI 2.3.1-2.3.3
 
 ########################################
@@ -118,7 +118,7 @@ counts <- data.frame(item = c("Aug extinct outliers (21-SNP FDR<0.05)", "  near 
 cat("\n===== Counts =====\n"); print(counts, row.names = FALSE)
 write.csv(counts, "convergent_counts.csv", row.names = FALSE)
 
-## ---- Fig. S11: residual Manhattan plots ------------------------------------------------
+## ---- Fig. S12: residual Manhattan plots ------------------------------------------------
 ## residual = A - B / max(B) * max(A) on window -log10(P) (A: vs unexposed; B: pre-adapted vs
 ## exposed), floored at 0. Points: November set (green; red if FlyCADD > 0.6), August set
 ## (cyan; yellow if FlyCADD > 0.6), relaxed three-way set (dark).
@@ -145,7 +145,7 @@ ref_plot <- function(a, title) {
 		geom_point(data = na.omit(r[which(r[[paste0(a, ".fdr.rolwin21")]] < 0.01), ]), aes(POS, .data[[y]]), color = "darkmagenta", size = 1) +
 		scale_y_continuous(limits = c(0, max(na.omit(r[[y]])))) + ggtitle(title))
 }
-save_panels("FigS11_residual_manhattans.pdf", list(
+save_panels("FigS12_residual_manhattans.pdf", list(
 	ref_plot("PAvE", "E vs PA"), ref_plot("SvE", "E vs S"),
 	resid_plot("PAvE.T1", "PAvSE.T1", "E vs PA minus PA vs SE (TPT1): 21-SNP sliding window"),
 	resid_plot("EvSE.T1", "PAvSE.T1", "E vs SE minus PA vs SE (TPT1): 21-SNP sliding window"),
@@ -153,7 +153,7 @@ save_panels("FigS11_residual_manhattans.pdf", list(
 	resid_plot("SvE.T4", "PAvS.T4", "S vs E minus PA vs S (TPT4): 21-SNP sliding window"),
 	resid_plot("PAvE", "PAvS", "PA vs E minus PA vs S: 21-SNP sliding window"),
 	resid_plot("SvE", "PAvS", "S vs E minus PA vs S: 21-SNP sliding window")), ncol = 2, nrow = 4, width = 11.25, height = 8)
-msg("Fig. S11 written")
+msg("Fig. S12 written")
 
 ## ---- Fig. 4D: allele-frequency trajectories of the November set ------------------------
 rm(glm.all); invisible(gc())
